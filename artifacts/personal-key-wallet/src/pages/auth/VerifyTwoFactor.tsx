@@ -5,9 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { KeyRound, Loader2, ShieldCheck, Smartphone } from "lucide-react";
+import { ShieldCheck, Loader2, Smartphone, ArrowRight } from "lucide-react";
 
 export default function VerifyTwoFactor() {
   const [, navigate] = useLocation();
@@ -21,94 +20,82 @@ export default function VerifyTwoFactor() {
 
   const verifyMutation = useVerifyTotp({
     mutation: {
-      onSuccess: (data) => {
-        login(data.token, data.user);
-        navigate("/");
-      },
+      onSuccess: (data) => { login(data.token, data.user); navigate("/"); },
       onError: (err: unknown) => {
-        const msg =
-          (err as { data?: { error?: string } })?.data?.error ??
-          "Invalid code. Please check your authenticator app and try again.";
-        setError(msg);
+        setError((err as { data?: { error?: string } })?.data?.error ?? "Invalid code. Please try again.");
         setCode("");
       },
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    verifyMutation.mutate({ data: { tempToken, code } });
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="p-2 bg-blue-600 rounded-xl">
-            <KeyRound className="h-7 w-7 text-white" />
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: "#F3F5F7", fontFamily: "'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif" }}>
+      <div className="w-full max-w-[380px]">
+        <div className="flex items-center gap-2.5 mb-8">
+          <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: "hsl(210,100%,40%)" }}>
+            <ShieldCheck className="h-5 w-5 text-white" />
           </div>
-          <span className="text-2xl font-bold text-white">Personal Key Wallet</span>
+          <span className="font-bold text-lg tracking-tight text-foreground">Key Wallet</span>
         </div>
 
-        <Card className="border-slate-700 bg-slate-800/60 backdrop-blur-sm shadow-2xl">
-          <CardHeader className="text-center space-y-1">
-            <div className="flex justify-center mb-3">
-              <div className="p-3 bg-blue-600/20 rounded-2xl border border-blue-600/30">
-                <Smartphone className="h-8 w-8 text-blue-400" />
-              </div>
+        <div className="bg-white rounded-xl border border-border p-7" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="h-14 w-14 rounded-2xl flex items-center justify-center mb-4"
+              style={{ background: "hsl(210,100%,40%,0.1)" }}>
+              <Smartphone className="h-7 w-7" style={{ color: "hsl(210,100%,40%)" }} />
             </div>
-            <CardTitle className="text-xl text-white">Two-factor verification</CardTitle>
-            <CardDescription className="text-slate-400">
-              Open your Google Authenticator app and enter the 6-digit code for Personal Key Wallet.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive" className="border-red-800 bg-red-950/50">
-                  <AlertDescription className="text-red-300">{error}</AlertDescription>
-                </Alert>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="code" className="text-slate-300">Authenticator code</Label>
-                <Input
-                  id="code"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]{6}"
-                  maxLength={6}
-                  placeholder="123456"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  required
-                  autoFocus
-                  autoComplete="one-time-code"
-                  className="bg-slate-700/50 border-slate-600 text-white text-center text-2xl tracking-[0.4em] placeholder:text-slate-500 focus:border-blue-500"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium"
-                disabled={verifyMutation.isPending || code.length !== 6}
-              >
-                {verifyMutation.isPending ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Verifying…</>
-                ) : (
-                  <><ShieldCheck className="h-4 w-4 mr-2" /> Verify & sign in</>
-                )}
-              </Button>
-            </form>
-            <p className="mt-4 text-center text-sm text-slate-400">
-              <button
-                onClick={() => navigate("/auth/login")}
-                className="text-blue-400 hover:text-blue-300 underline underline-offset-4"
-              >
-                Back to login
-              </button>
+            <h2 className="text-xl font-bold text-foreground tracking-tight">Two-factor verification</h2>
+            <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">
+              Open Google Authenticator and enter the 6-digit code for Key Wallet.
             </p>
-          </CardContent>
-        </Card>
+          </div>
+
+          <form onSubmit={(e) => { e.preventDefault(); setError(null); verifyMutation.mutate({ data: { tempToken, code } }); }} className="space-y-4">
+            {error && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertDescription className="text-red-800 text-[13px]">{error}</AlertDescription>
+              </Alert>
+            )}
+            <div className="space-y-1.5">
+              <Label htmlFor="code" className="text-[13px] font-semibold text-foreground">Authenticator code</Label>
+              <Input
+                id="code"
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="000000"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                required
+                autoFocus
+                autoComplete="one-time-code"
+                className="h-14 text-center text-3xl font-mono tracking-[0.5em] bg-white border-border focus-visible:ring-[hsl(210,100%,40%)]"
+                style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full h-10 font-semibold text-[13.5px]"
+              style={{ background: "hsl(210,100%,40%)" }}
+              disabled={verifyMutation.isPending || code.length !== 6}
+            >
+              {verifyMutation.isPending
+                ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Verifying…</>
+                : <>Verify & sign in <ArrowRight className="h-4 w-4 ml-2" /></>
+              }
+            </Button>
+          </form>
+
+          <p className="mt-5 text-center text-[13px] text-muted-foreground">
+            <button onClick={() => navigate("/auth/login")} className="font-semibold underline underline-offset-4" style={{ color: "hsl(210,100%,40%)" }}>
+              ← Back to login
+            </button>
+          </p>
+        </div>
+
+        <p className="text-center text-[11px] text-muted-foreground mt-4">
+          Protected by Google Authenticator TOTP
+        </p>
       </div>
     </div>
   );

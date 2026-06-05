@@ -4,9 +4,8 @@ import { useLogin } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { KeyRound, Loader2, ShieldCheck } from "lucide-react";
+import { ShieldCheck, Loader2, ArrowRight, Lock } from "lucide-react";
 
 export default function Login() {
   const [, navigate] = useLocation();
@@ -22,7 +21,7 @@ export default function Login() {
       onError: (err: unknown) => {
         const msg =
           (err as { data?: { error?: string } })?.data?.error ??
-          "Login failed. Please try again.";
+          "Invalid email or password.";
         setError(msg);
       },
     },
@@ -35,78 +34,117 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="p-2 bg-blue-600 rounded-xl">
-            <KeyRound className="h-7 w-7 text-white" />
+    <div className="min-h-screen flex" style={{ background: "#F3F5F7", fontFamily: "'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif" }}>
+      {/* Left panel — branding */}
+      <div className="hidden lg:flex w-[420px] flex-col justify-between p-10"
+        style={{ background: "hsl(210,100%,40%)" }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center">
+            <ShieldCheck className="h-5 w-5 text-white" />
           </div>
-          <span className="text-2xl font-bold text-white">Personal Key Wallet</span>
+          <span className="text-white font-bold text-lg tracking-tight">Key Wallet</span>
         </div>
 
-        <Card className="border-slate-700 bg-slate-800/60 backdrop-blur-sm shadow-2xl">
-          <CardHeader className="text-center space-y-1">
-            <CardTitle className="text-xl text-white">Welcome back</CardTitle>
-            <CardDescription className="text-slate-400">
-              Sign in to your secure vault
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive" className="border-red-800 bg-red-950/50">
-                  <AlertDescription className="text-red-300">{error}</AlertDescription>
-                </Alert>
+        <div className="space-y-4">
+          <div className="h-12 w-12 rounded-2xl bg-white/15 flex items-center justify-center">
+            <Lock className="h-6 w-6 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-white leading-tight">
+            Your secure<br />digital vault
+          </h1>
+          <p className="text-white/70 text-sm leading-relaxed">
+            Store passwords, documents, and financial records with military-grade security and mandatory 2FA.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {["🔐 Passwords", "📄 Documents", "💰 Finance"].map((tag) => (
+            <span key={tag} className="text-xs font-medium text-white/80 bg-white/10 px-3 py-1.5 rounded-full">
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Right panel — form */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-[380px]">
+          {/* Mobile logo */}
+          <div className="flex items-center gap-2.5 mb-8 lg:hidden">
+            <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: "hsl(210,100%,40%)" }}>
+              <ShieldCheck className="h-5 w-5 text-white" />
+            </div>
+            <span className="font-bold text-lg tracking-tight text-foreground">Key Wallet</span>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-foreground tracking-tight">Welcome back</h2>
+            <p className="text-muted-foreground mt-1 text-[14px]">Sign in to your secure vault</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <Alert className="border-red-200 bg-red-50 text-red-800">
+                <AlertDescription className="text-[13px]">{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-[13px] font-semibold text-foreground">Email address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                className="h-10 bg-white border-border text-[13.5px] focus-visible:ring-[hsl(210,100%,40%)] focus-visible:border-[hsl(210,100%,40%)]"
+                style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-[13px] font-semibold text-foreground">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                className="h-10 bg-white border-border text-[13.5px] focus-visible:ring-[hsl(210,100%,40%)] focus-visible:border-[hsl(210,100%,40%)]"
+                style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full h-10 font-semibold text-[13.5px] mt-2"
+              style={{ background: "hsl(210,100%,40%)" }}
+              disabled={loginMutation.isPending}
+            >
+              {loginMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Signing in…</>
+              ) : (
+                <>Sign in <ArrowRight className="h-4 w-4 ml-2" /></>
               )}
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-300">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-300">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium"
-                disabled={loginMutation.isPending}
-              >
-                {loginMutation.isPending ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Signing in…</>
-                ) : (
-                  <><ShieldCheck className="h-4 w-4 mr-2" /> Sign in</>
-                )}
-              </Button>
-            </form>
-            <p className="mt-4 text-center text-sm text-slate-400">
-              Don't have an account?{" "}
-              <button
-                onClick={() => navigate("/auth/signup")}
-                className="text-blue-400 hover:text-blue-300 underline underline-offset-4"
-              >
-                Create one
-              </button>
-            </p>
-          </CardContent>
-        </Card>
+            </Button>
+          </form>
+
+          <p className="mt-5 text-center text-[13px] text-muted-foreground">
+            Don't have an account?{" "}
+            <button
+              onClick={() => navigate("/auth/signup")}
+              className="font-semibold underline underline-offset-4"
+              style={{ color: "hsl(210,100%,40%)" }}
+            >
+              Create one
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );
