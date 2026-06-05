@@ -7,10 +7,14 @@ import {
   Wallet, 
   LineChart, 
   ActivitySquare,
-  PuzzleIcon
+  PuzzleIcon,
+  LogOut,
+  User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -28,6 +32,7 @@ const navItems = [
 
 export default function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
+  const { user, logout } = useAuth();
 
   return (
     <div className="flex min-h-[100dvh] w-full bg-background text-foreground font-sans">
@@ -60,11 +65,31 @@ export default function Layout({ children }: LayoutProps) {
             );
           })}
         </div>
-        <div className="p-4 border-t border-border mt-auto">
-          <div className="bg-muted p-4 rounded-md text-xs text-muted-foreground">
-            <p className="font-medium text-foreground mb-1">System Secure</p>
-            <p>All data is encrypted end-to-end.</p>
-          </div>
+        <div className="p-4 border-t border-border mt-auto space-y-3">
+          {user && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50">
+              <div className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/20 shrink-0">
+                <User className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-foreground truncate">
+                  {user.name ?? user.email}
+                </p>
+                {user.name && (
+                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                )}
+              </div>
+            </div>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={logout}
+            className="w-full justify-start text-muted-foreground hover:text-foreground gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </Button>
         </div>
       </aside>
       <main className="flex-1 flex flex-col overflow-hidden relative">

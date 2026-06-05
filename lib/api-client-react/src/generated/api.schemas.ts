@@ -201,6 +201,53 @@ export interface Alert {
   createdAt: string;
 }
 
+export interface AuthSignupBody {
+  email: string;
+  /** @minLength 8 */
+  password: string;
+  name?: string;
+}
+
+export interface AuthSignupResponse {
+  tempToken: string;
+  qrCodeDataUrl: string;
+  manualKey: string;
+  message: string;
+}
+
+export interface AuthVerifySetupBody {
+  tempToken: string;
+  code: string;
+}
+
+export interface AuthLoginBody {
+  email: string;
+  password: string;
+}
+
+export interface AuthLoginResponse {
+  tempToken: string;
+  message: string;
+}
+
+export interface AuthVerifyBody {
+  tempToken: string;
+  code: string;
+}
+
+export interface AuthUser {
+  id: number;
+  email: string;
+  /** @nullable */
+  name?: string | null;
+  totpEnabled: boolean;
+}
+
+export interface AuthSessionResponse {
+  token: string;
+  user: AuthUser;
+}
+
 export type ListPasswordsParams = {
 search?: string;
 category?: string;

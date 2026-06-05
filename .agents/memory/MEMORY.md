@@ -1,0 +1,2 @@
+- [API server CJS interop](api-server-cjs-interop.md) — bcryptjs, jsonwebtoken, qrcode, otplib all need createRequire pattern; zod must be in api-server deps (catalog:); use z.string().email() not z.email() (v3).
+- [OpenAPI schema naming](openapi-schema-naming.md) — Auth schemas must use Auth* prefix (AuthLoginBody etc.) to avoid Orval duplicate-export conflicts in api-zod barrel.

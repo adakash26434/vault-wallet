@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication and 2FA
   - name: passwords
     description: Password vault operations
   - name: documents
@@ -19,6 +21,115 @@ tags:
   - name: dashboard
     description: Dashboard and insights
 paths:
+  /auth/signup:
+    post:
+      operationId: signup
+      tags: [auth]
+      summary: Register a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthSignupBody"
+      responses:
+        "201":
+          description: Account created, 2FA setup required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSignupResponse"
+        "409":
+          description: Email already in use
+
+  /auth/verify-setup:
+    post:
+      operationId: verifyTotpSetup
+      tags: [auth]
+      summary: Verify the 2FA code during initial setup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthVerifySetupBody"
+      responses:
+        "200":
+          description: 2FA enabled, full session granted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSessionResponse"
+        "400":
+          description: Invalid code or token
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthLoginBody"
+      responses:
+        "200":
+          description: Credentials accepted, 2FA required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthLoginResponse"
+        "401":
+          description: Invalid credentials
+
+  /auth/verify:
+    post:
+      operationId: verifyTotp
+      tags: [auth]
+      summary: Verify TOTP code and get session token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthVerifyBody"
+      responses:
+        "200":
+          description: 2FA verified, session token returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSessionResponse"
+        "400":
+          description: Invalid code or token
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Unauthorized
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current session
+      responses:
+        "204":
+          description: Logged out
   /healthz:
     get:
       operationId: healthCheck
@@ -642,3 +753,94 @@ components:
           type: string
         createdAt:
           type: string
+
+    AuthSignupBody:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        name:
+          type: string
+
+    AuthSignupResponse:
+      type: object
+      required: [tempToken, qrCodeDataUrl, manualKey, message]
+      properties:
+        tempToken:
+          type: string
+        qrCodeDataUrl:
+          type: string
+        manualKey:
+          type: string
+        message:
+          type: string
+
+    AuthVerifySetupBody:
+      type: object
+      required: [tempToken, code]
+      properties:
+        tempToken:
+          type: string
+        code:
+          type: string
+
+    AuthLoginBody:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthLoginResponse:
+      type: object
+      required: [tempToken, message]
+      properties:
+        tempToken:
+          type: string
+        message:
+          type: string
+
+    AuthVerifyBody:
+      type: object
+      required: [tempToken, code]
+      properties:
+        tempToken:
+          type: string
+        code:
+          type: string
+
+    AuthSessionResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/AuthUser"
+
+    AuthUser:
+      type: object
+      required: [id, email, totpEnabled]
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: ["string", "null"]
+        totpEnabled:
+          type: boolean
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

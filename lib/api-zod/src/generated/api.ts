@@ -9,6 +9,83 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Register a new account
+ */
+export const signupBodyPasswordMin = 8;
+
+
+
+export const SignupBody = zod.object({
+  "email": zod.string().email(),
+  "password": zod.string().min(signupBodyPasswordMin),
+  "name": zod.string().optional()
+})
+
+
+/**
+ * @summary Verify the 2FA code during initial setup
+ */
+export const VerifyTotpSetupBody = zod.object({
+  "tempToken": zod.string(),
+  "code": zod.string()
+})
+
+export const VerifyTotpSetupResponse = zod.object({
+  "token": zod.string(),
+  "user": zod.object({
+  "id": zod.number(),
+  "email": zod.string(),
+  "name": zod.string().nullish(),
+  "totpEnabled": zod.boolean()
+})
+})
+
+
+/**
+ * @summary Login with email and password
+ */
+export const LoginBody = zod.object({
+  "email": zod.string().email(),
+  "password": zod.string()
+})
+
+export const LoginResponse = zod.object({
+  "tempToken": zod.string(),
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Verify TOTP code and get session token
+ */
+export const VerifyTotpBody = zod.object({
+  "tempToken": zod.string(),
+  "code": zod.string()
+})
+
+export const VerifyTotpResponse = zod.object({
+  "token": zod.string(),
+  "user": zod.object({
+  "id": zod.number(),
+  "email": zod.string(),
+  "name": zod.string().nullish(),
+  "totpEnabled": zod.boolean()
+})
+})
+
+
+/**
+ * @summary Get current authenticated user
+ */
+export const GetMeResponse = zod.object({
+  "id": zod.number(),
+  "email": zod.string(),
+  "name": zod.string().nullish(),
+  "totpEnabled": zod.boolean()
+})
+
+
+/**
  * Returns server health status
  * @summary Health check
  */
