@@ -590,6 +590,12 @@ components:
           type: string
         category:
           type: string
+        documentNumber:
+          type: ["string", "null"]
+        issuedBy:
+          type: ["string", "null"]
+        issueDate:
+          type: ["string", "null"]
         fileUrl:
           type: ["string", "null"]
         expiryDate:
@@ -612,6 +618,12 @@ components:
           minLength: 1
         category:
           type: string
+        documentNumber:
+          type: string
+        issuedBy:
+          type: string
+        issueDate:
+          type: string
         fileUrl:
           type: string
         expiryDate:
@@ -626,6 +638,12 @@ components:
           type: string
           minLength: 1
         category:
+          type: string
+        documentNumber:
+          type: string
+        issuedBy:
+          type: string
+        issueDate:
           type: string
         fileUrl:
           type: string

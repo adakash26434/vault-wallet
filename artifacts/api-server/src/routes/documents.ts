@@ -57,6 +57,9 @@ router.post("/documents", async (req, res) => {
     .values({
       name: parsed.data.name,
       category: parsed.data.category ?? "Other",
+      documentNumber: parsed.data.documentNumber,
+      issuedBy: parsed.data.issuedBy,
+      issueDate: parsed.data.issueDate,
       fileUrl: parsed.data.fileUrl,
       expiryDate: parsed.data.expiryDate,
       notes: parsed.data.notes,

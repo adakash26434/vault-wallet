@@ -241,6 +241,9 @@ export const ListDocumentsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "category": zod.string(),
+  "documentNumber": zod.string().nullish(),
+  "issuedBy": zod.string().nullish(),
+  "issueDate": zod.string().nullish(),
   "fileUrl": zod.string().nullish(),
   "expiryDate": zod.string().nullish(),
   "notes": zod.string().nullish(),
@@ -260,6 +263,9 @@ export const ListDocumentsResponse = zod.array(ListDocumentsResponseItem)
 export const CreateDocumentBody = zod.object({
   "name": zod.string().min(1),
   "category": zod.string(),
+  "documentNumber": zod.string().optional(),
+  "issuedBy": zod.string().optional(),
+  "issueDate": zod.string().optional(),
   "fileUrl": zod.string().optional(),
   "expiryDate": zod.string().optional(),
   "notes": zod.string().optional()
@@ -279,6 +285,9 @@ export const UpdateDocumentParams = zod.object({
 export const UpdateDocumentBody = zod.object({
   "name": zod.string().min(1).optional(),
   "category": zod.string().optional(),
+  "documentNumber": zod.string().optional(),
+  "issuedBy": zod.string().optional(),
+  "issueDate": zod.string().optional(),
   "fileUrl": zod.string().optional(),
   "expiryDate": zod.string().optional(),
   "notes": zod.string().optional()
@@ -288,6 +297,9 @@ export const UpdateDocumentResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "category": zod.string(),
+  "documentNumber": zod.string().nullish(),
+  "issuedBy": zod.string().nullish(),
+  "issueDate": zod.string().nullish(),
   "fileUrl": zod.string().nullish(),
   "expiryDate": zod.string().nullish(),
   "notes": zod.string().nullish(),

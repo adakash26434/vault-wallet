@@ -17,6 +17,9 @@ import { useToast } from "@/hooks/use-toast";
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   category: z.string().min(1, "Category is required"),
+  documentNumber: z.string().optional(),
+  issuedBy: z.string().optional(),
+  issueDate: z.string().optional(),
   fileUrl: z.string().optional(),
   expiryDate: z.string().optional(),
   notes: z.string().optional(),
@@ -29,7 +32,7 @@ interface DocumentFormDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-const CATEGORIES = ["Identity", "Financial", "Medical", "Vehicle", "Property", "Other"];
+const CATEGORIES = ["Identity", "Financial", "Medical", "Vehicle", "Property", "Government", "Other"];
 
 export default function DocumentFormDialog({ children, document, open, onOpenChange }: DocumentFormDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
@@ -49,6 +52,9 @@ export default function DocumentFormDialog({ children, document, open, onOpenCha
     defaultValues: {
       name: document?.name || "",
       category: document?.category || "Identity",
+      documentNumber: document?.documentNumber || "",
+      issuedBy: document?.issuedBy || "",
+      issueDate: document?.issueDate ? new Date(document.issueDate).toISOString().split('T')[0] : "",
       fileUrl: document?.fileUrl || "",
       expiryDate: document?.expiryDate ? new Date(document.expiryDate).toISOString().split('T')[0] : "",
       notes: document?.notes || "",
@@ -56,21 +62,16 @@ export default function DocumentFormDialog({ children, document, open, onOpenCha
   });
   
   React.useEffect(() => {
-    if (document && isOpen) {
+    if (isOpen) {
       form.reset({
-        name: document.name,
-        category: document.category || "Identity",
-        fileUrl: document.fileUrl || "",
-        expiryDate: document.expiryDate ? new Date(document.expiryDate).toISOString().split('T')[0] : "",
-        notes: document.notes || "",
-      });
-    } else if (!document && isOpen) {
-      form.reset({
-        name: "",
-        category: "Identity",
-        fileUrl: "",
-        expiryDate: "",
-        notes: "",
+        name: document?.name || "",
+        category: document?.category || "Identity",
+        documentNumber: document?.documentNumber || "",
+        issuedBy: document?.issuedBy || "",
+        issueDate: document?.issueDate ? new Date(document.issueDate).toISOString().split('T')[0] : "",
+        fileUrl: document?.fileUrl || "",
+        expiryDate: document?.expiryDate ? new Date(document.expiryDate).toISOString().split('T')[0] : "",
+        notes: document?.notes || "",
       });
     }
   }, [document, isOpen, form]);
@@ -86,11 +87,7 @@ export default function DocumentFormDialog({ children, document, open, onOpenCha
             setIsOpen(false);
           },
           onError: (error: any) => {
-            toast({ 
-              title: "Failed to update document", 
-              description: error.message || "An error occurred", 
-              variant: "destructive" 
-            });
+            toast({ title: "Failed to update document", description: error.message, variant: "destructive" });
           }
         }
       );
@@ -105,11 +102,7 @@ export default function DocumentFormDialog({ children, document, open, onOpenCha
             form.reset();
           },
           onError: (error: any) => {
-            toast({ 
-              title: "Failed to add document", 
-              description: error.message || "An error occurred", 
-              variant: "destructive" 
-            });
+            toast({ title: "Failed to add document", description: error.message, variant: "destructive" });
           }
         }
       );
@@ -121,40 +114,39 @@ export default function DocumentFormDialog({ children, document, open, onOpenCha
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{document ? "Edit Document" : "Add New Document"}</DialogTitle>
           <DialogDescription>
-            {document ? "Update document details." : "Add a new document reference."}
+            {document ? "Update document details." : "Store your document details securely."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Document Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Passport" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
             <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Document Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Passport, Citizenship" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="category"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
+                          <SelectValue placeholder="Select" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -169,10 +161,49 @@ export default function DocumentFormDialog({ children, document, open, onOpenCha
               />
               <FormField
                 control={form.control}
+                name="documentNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Document Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. 123-456-789" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="issuedBy"
+                render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Issued By</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. District Administration Office, Kathmandu" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="issueDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Issue Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="expiryDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Expiry Date (Optional)</FormLabel>
+                    <FormLabel>Expiry Date</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -187,7 +218,7 @@ export default function DocumentFormDialog({ children, document, open, onOpenCha
               name="fileUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>File URL (Optional)</FormLabel>
+                  <FormLabel>File URL <span className="text-muted-foreground">(optional)</span></FormLabel>
                   <FormControl>
                     <Input placeholder="https://..." {...field} />
                   </FormControl>
@@ -201,19 +232,17 @@ export default function DocumentFormDialog({ children, document, open, onOpenCha
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormLabel>Notes <span className="text-muted-foreground">(optional)</span></FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Any additional information" className="resize-none" {...field} />
+                    <Textarea placeholder="Any additional information…" className="resize-none" rows={3} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="flex justify-end pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="mr-2">
-                Cancel
-              </Button>
+            <div className="flex justify-end pt-2 gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {document ? "Save Changes" : "Add Document"}

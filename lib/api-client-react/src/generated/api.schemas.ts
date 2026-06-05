@@ -67,6 +67,12 @@ export interface Document {
   name: string;
   category: string;
   /** @nullable */
+  documentNumber?: string | null;
+  /** @nullable */
+  issuedBy?: string | null;
+  /** @nullable */
+  issueDate?: string | null;
+  /** @nullable */
   fileUrl?: string | null;
   /** @nullable */
   expiryDate?: string | null;
@@ -82,6 +88,9 @@ export interface DocumentInput {
   /** @minLength 1 */
   name: string;
   category: string;
+  documentNumber?: string;
+  issuedBy?: string;
+  issueDate?: string;
   fileUrl?: string;
   expiryDate?: string;
   notes?: string;
@@ -91,6 +100,9 @@ export interface DocumentUpdate {
   /** @minLength 1 */
   name?: string;
   category?: string;
+  documentNumber?: string;
+  issuedBy?: string;
+  issueDate?: string;
   fileUrl?: string;
   expiryDate?: string;
   notes?: string;

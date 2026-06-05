@@ -11,6 +11,12 @@ export interface Document {
   name: string;
   category: string;
   /** @nullable */
+  documentNumber?: string | null;
+  /** @nullable */
+  issuedBy?: string | null;
+  /** @nullable */
+  issueDate?: string | null;
+  /** @nullable */
   fileUrl?: string | null;
   /** @nullable */
   expiryDate?: string | null;

@@ -10,6 +10,9 @@ export interface DocumentUpdate {
   /** @minLength 1 */
   name?: string;
   category?: string;
+  documentNumber?: string;
+  issuedBy?: string;
+  issueDate?: string;
   fileUrl?: string;
   expiryDate?: string;
   notes?: string;
