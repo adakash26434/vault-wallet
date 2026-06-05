@@ -8,6 +8,7 @@ import {
   UpdateDocumentBody,
   DeleteDocumentParams,
 } from "@workspace/api-zod";
+import { encryptField, decryptField } from "../lib/crypto.js";
 
 const router = Router();
 
@@ -27,6 +28,9 @@ function enrichDocument(row: typeof documentsTable.$inferSelect) {
 
   return {
     ...row,
+    // Decrypt sensitive fields
+    documentNumber: decryptField(row.documentNumber),
+    notes: decryptField(row.notes),
     isExpired,
     daysUntilExpiry,
     createdAt: row.createdAt.toISOString(),
@@ -57,12 +61,12 @@ router.post("/documents", async (req, res) => {
     .values({
       name: parsed.data.name,
       category: parsed.data.category ?? "Other",
-      documentNumber: parsed.data.documentNumber,
+      documentNumber: encryptField(parsed.data.documentNumber),
       issuedBy: parsed.data.issuedBy,
       issueDate: parsed.data.issueDate,
       fileUrl: parsed.data.fileUrl,
       expiryDate: parsed.data.expiryDate,
-      notes: parsed.data.notes,
+      notes: encryptField(parsed.data.notes),
     })
     .returning();
 
@@ -76,9 +80,21 @@ router.patch("/documents/:id", async (req, res) => {
   const bodyParsed = UpdateDocumentBody.safeParse(req.body);
   if (!bodyParsed.success) return res.status(400).json({ error: "Invalid body" });
 
+  const updates: Record<string, unknown> = {};
+  const data = bodyParsed.data;
+
+  if (data.name !== undefined) updates.name = data.name;
+  if (data.category !== undefined) updates.category = data.category;
+  if (data.documentNumber !== undefined) updates.documentNumber = encryptField(data.documentNumber);
+  if (data.issuedBy !== undefined) updates.issuedBy = data.issuedBy;
+  if (data.issueDate !== undefined) updates.issueDate = data.issueDate;
+  if (data.expiryDate !== undefined) updates.expiryDate = data.expiryDate;
+  if (data.fileUrl !== undefined) updates.fileUrl = data.fileUrl;
+  if (data.notes !== undefined) updates.notes = encryptField(data.notes);
+
   const [row] = await db
     .update(documentsTable)
-    .set(bodyParsed.data)
+    .set(updates)
     .where(eq(documentsTable.id, paramsParsed.data.id))
     .returning();
 

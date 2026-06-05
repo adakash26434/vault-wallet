@@ -8,6 +8,7 @@ const { authenticator } = require("otplib") as typeof import("otplib");
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { encryptField, decryptField } from "../lib/crypto.js";
 
 const router = Router();
 
@@ -67,10 +68,11 @@ router.post("/auth/signup", async (req, res) => {
 
   const passwordHash = await bcrypt.hash(password, 12);
   const totpSecret = authenticator.generateSecret();
+  const encryptedTotpSecret = encryptField(totpSecret) ?? totpSecret;
 
   const [user] = await db
     .insert(usersTable)
-    .values({ email: email.toLowerCase(), passwordHash, totpSecret, name, totpEnabled: false })
+    .values({ email: email.toLowerCase(), passwordHash, totpSecret: encryptedTotpSecret, name, totpEnabled: false })
     .returning();
 
   const totpUri = authenticator.keyuri(email, APP_NAME, totpSecret);
@@ -103,8 +105,9 @@ router.post("/auth/verify-setup", async (req, res) => {
     return res.status(400).json({ error: "User not found" });
   }
 
+  const plainSecret = decryptField(user.totpSecret) ?? user.totpSecret;
   authenticator.options = { window: 1 };
-  const isValid = authenticator.verify({ token: code, secret: user.totpSecret });
+  const isValid = authenticator.verify({ token: code, secret: plainSecret });
   if (!isValid) {
     return res.status(400).json({ error: "Invalid 2FA code. Please check your authenticator app." });
   }
@@ -165,8 +168,9 @@ router.post("/auth/verify", async (req, res) => {
     return res.status(400).json({ error: "User not found" });
   }
 
+  const plainSecret2 = decryptField(user.totpSecret) ?? user.totpSecret;
   authenticator.options = { window: 1 };
-  const isValid = authenticator.verify({ token: code, secret: user.totpSecret });
+  const isValid = authenticator.verify({ token: code, secret: plainSecret2 });
   if (!isValid) {
     return res.status(400).json({ error: "Invalid 2FA code. Please check your authenticator app." });
   }

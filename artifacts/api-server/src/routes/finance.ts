@@ -9,8 +9,18 @@ import {
   DeleteFinanceRecordParams,
   GetFinanceSummaryQueryParams,
 } from "@workspace/api-zod";
+import { encryptField, decryptField } from "../lib/crypto.js";
 
 const router = Router();
+
+function decryptRow(r: typeof financeRecordsTable.$inferSelect) {
+  return {
+    ...r,
+    amount: Number(r.amount),
+    description: decryptField(r.description),
+    createdAt: r.createdAt.toISOString(),
+  };
+}
 
 router.get("/finance/records", async (req, res) => {
   const parsed = ListFinanceRecordsQueryParams.safeParse(req.query);
@@ -29,13 +39,7 @@ router.get("/finance/records", async (req, res) => {
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(financeRecordsTable.date);
 
-  return res.json(
-    rows.map((r) => ({
-      ...r,
-      amount: Number(r.amount),
-      createdAt: r.createdAt.toISOString(),
-    }))
-  );
+  return res.json(rows.map(decryptRow));
 });
 
 router.post("/finance/records", async (req, res) => {
@@ -48,12 +52,12 @@ router.post("/finance/records", async (req, res) => {
       type: parsed.data.type as "income" | "expense",
       category: parsed.data.category,
       amount: String(parsed.data.amount),
-      description: parsed.data.description,
+      description: encryptField(parsed.data.description),
       date: parsed.data.date,
     })
     .returning();
 
-  return res.status(201).json({ ...row, amount: Number(row.amount), createdAt: row.createdAt.toISOString() });
+  return res.status(201).json(decryptRow(row));
 });
 
 router.patch("/finance/records/:id", async (req, res) => {
@@ -67,7 +71,7 @@ router.patch("/finance/records/:id", async (req, res) => {
   if (bodyParsed.data.type) updates.type = bodyParsed.data.type;
   if (bodyParsed.data.category) updates.category = bodyParsed.data.category;
   if (bodyParsed.data.amount !== undefined) updates.amount = String(bodyParsed.data.amount);
-  if (bodyParsed.data.description !== undefined) updates.description = bodyParsed.data.description;
+  if (bodyParsed.data.description !== undefined) updates.description = encryptField(bodyParsed.data.description);
   if (bodyParsed.data.date) updates.date = bodyParsed.data.date;
 
   const [row] = await db
@@ -77,7 +81,7 @@ router.patch("/finance/records/:id", async (req, res) => {
     .returning();
 
   if (!row) return res.status(404).json({ error: "Not found" });
-  return res.json({ ...row, amount: Number(row.amount), createdAt: row.createdAt.toISOString() });
+  return res.json(decryptRow(row));
 });
 
 router.delete("/finance/records/:id", async (req, res) => {
@@ -106,6 +110,7 @@ router.get("/finance/summary", async (req, res) => {
       )
     );
 
+  // amount column is NOT encrypted (numeric) — safe to do arithmetic directly
   const totalIncome = rows.filter((r) => r.type === "income").reduce((sum, r) => sum + Number(r.amount), 0);
   const totalExpenses = rows.filter((r) => r.type === "expense").reduce((sum, r) => sum + Number(r.amount), 0);
   const savings = totalIncome - totalExpenses;
