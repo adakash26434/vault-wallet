@@ -1,0 +1,52 @@
+import { Switch, Route, Router as WouterRouter } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "@/pages/not-found";
+import Layout from "@/components/Layout";
+import Dashboard from "@/pages/Dashboard";
+import Passwords from "@/pages/Passwords";
+import Documents from "@/pages/Documents";
+import Finance from "@/pages/Finance";
+import FinanceAnalytics from "@/pages/FinanceAnalytics";
+import Insights from "@/pages/Insights";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+function Router() {
+  return (
+    <Layout>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/vault/passwords" component={Passwords} />
+        <Route path="/vault/documents" component={Documents} />
+        <Route path="/finance" component={Finance} />
+        <Route path="/finance/analytics" component={FinanceAnalytics} />
+        <Route path="/insights" component={Insights} />
+        <Route component={NotFound} />
+      </Switch>
+    </Layout>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <Router />
+        </WouterRouter>
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;

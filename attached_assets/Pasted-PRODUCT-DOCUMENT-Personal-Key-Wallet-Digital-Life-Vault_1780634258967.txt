@@ -1,0 +1,302 @@
+PRODUCT DOCUMENT
+
+Personal Key Wallet (Digital Life Vault)
+
+⸻
+
+1. 📌 Product Overview
+
+Product Name: Personal Key Wallet
+Category: Digital Security + Personal Finance + Identity Vault
+
+🎯 Vision:
+
+User को सम्पूर्ण digital जीवनलाई एउटै सुरक्षित स्थानमा राख्ने — जहाँ password, documents, OTP, र personal financial tracking सबै सुरक्षित र व्यवस्थित हुन्छ।
+
+⸻
+
+2. ❗ Problem Statement
+
+आजका users ले सामना गर्ने समस्या:
+
+* Password हराउने / बिर्सिने
+* Multiple accounts manage गर्न गाह्रो
+* OTP सुरक्षित राख्न नसक्ने
+* Important documents छरिएको (mobile, email, paper)
+* Monthly income/expense track नगर्ने
+* Financial clarity नहुनु
+* Security risk (leak, hack, phishing)
+
+👉 सबै कुरा अलग-अलग apps मा छ → confusion + insecurity
+
+⸻
+
+3. 💡 Proposed Solution
+
+Personal Key Wallet एक unified digital vault हो जसले:
+
+3.1 Security Vault
+
+* Password storage
+* OTP / recovery codes
+* Login details
+* Device access info
+
+3.2 Document Vault
+
+* Citizenship
+* Passport
+* License
+* Bank documents
+* Certificates
+* Secure file storage
+
+3.3 Personal Finance Tracker
+
+* Monthly income tracking
+* Expense categorization
+* Savings monitoring
+* Budget control
+* Financial insights
+
+⸻
+
+4. 🧠 Core Features
+
+🔐 A. Digital Vault
+
+* End-to-end encryption
+* Master password login
+* Biometric unlock
+* Auto copy password
+* Secure search
+
+⸻
+
+📂 B. Document Manager
+
+* Upload & scan documents
+* Categorization
+* Expiry reminders
+* Secure encrypted storage
+
+⸻
+
+💰 C. Financial Tracker
+
+* Income entry
+* Expense tracking
+* Category-based analysis
+* Monthly report
+* Savings overview
+
+⸻
+
+📊 D. Insights Engine
+
+* Spending pattern analysis
+* Weak password alerts
+* Security risk warnings
+* Monthly financial summary
+
+⸻
+
+⚠️ E. Smart Alerts
+
+* Expired documents
+* Weak passwords
+* Overspending detection
+* Unusual login activity
+
+⸻
+
+5. 🏗️ System Architecture
+
+Frontend:
+
+* Flutter (Android, iOS, Desktop)
+
+Backend:
+
+* Node.js / NestJS OR Firebase
+
+Database:
+
+* PostgreSQL (structured data)
+* Encrypted object storage (documents)
+
+Security Layer:
+
+* AES-256 encryption
+* PBKDF2 / Argon2 hashing
+* Zero-knowledge architecture
+
+⸻
+
+6. 🔐 Security Model
+
+Core Principle:
+
+“Even system owner cannot read user data”
+
+Features:
+
+* End-to-end encryption
+* Local encryption before upload
+* Master password-based key generation
+* Device binding
+* Optional recovery key (12–24 words)
+
+⸻
+
+7. 📱 User Flow
+
+Step 1: Signup
+
+* Phone / email verification
+* Create master password
+* Generate recovery key
+
+⸻
+
+Step 2: Vault Setup
+
+User sees:
+
+* Add Password
+* Add Document
+* Add Income/Expense
+
+⸻
+
+Step 3: Daily Use
+
+* Login via fingerprint
+* Access vault
+* Add entries in seconds
+* Auto suggestions
+
+⸻
+
+Step 4: Insights
+
+* Monthly report
+* Security alerts
+* Financial summary
+
+⸻
+
+8. 📊 Data Structure (Simplified)
+
+Users
+
+* user_id
+* phone/email
+* master_password_hash
+
+⸻
+
+Vault Items
+
+* item_id
+* user_id
+* type (password/document/finance)
+* encrypted_data
+
+⸻
+
+Finance Records
+
+* record_id
+* user_id
+* type (income/expense)
+* category
+* amount
+* date
+
+⸻
+
+9. 💰 Monetization Model
+
+Free Version:
+
+* Limited passwords
+* Basic finance tracking
+* Basic document storage
+
+Premium Version:
+
+* Unlimited vault items
+* Cloud sync
+* Advanced analytics
+* Multi-device access
+* AI insights
+
+⸻
+
+10. 📈 Market Strategy
+
+Target Users:
+
+* Students
+* Office workers
+* Business owners
+* Freelancers
+* General smartphone users
+
+⸻
+
+Growth Strategy:
+
+* “Forgot password problem” marketing
+* Finance control awareness
+* Viral referral system
+* Free + premium model
+
+⸻
+
+11. 🚀 Competitive Advantage
+
+Unlike existing tools:
+
+* Password managers only store passwords
+* Finance apps only track money
+* Document apps only store files
+
+👉 This product combines all 3 into one secure system
+
+⸻
+
+12. 🔥 Product Positioning
+
+“Your entire digital life — secured in one vault.”
+
+Not just:
+
+* password manager
+* finance app
+* document storage
+
+👉 But a Digital Life Control System
+
+⸻
+
+13. 🧭 Future Expansion
+
+* AI financial advisor
+* Fraud detection alerts
+* Family vault sharing
+* Business mode (office version)
+* Browser extension
+
+⸻
+
+📌 Final Summary
+
+Personal Key Wallet is designed as a:
+
+👉 Secure Identity Vault
+👉 Personal Finance Tracker
+👉 Document Security System
+
+All in one unified app.
