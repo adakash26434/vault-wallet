@@ -27,6 +27,7 @@ export * from './listDocumentsParams';
 export * from './listFinanceRecordsParams';
 export * from './listFinanceRecordsType';
 export * from './listPasswordsParams';
+export * from './matchPasswordsByDomainParams';
 export * from './passwordEntry';
 export * from './passwordEntryStrength';
 export * from './passwordInput';

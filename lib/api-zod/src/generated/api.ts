@@ -132,6 +132,28 @@ export const GetPasswordStatsResponse = zod.object({
 
 
 /**
+ * @summary Find passwords matching a domain (for browser extension)
+ */
+export const MatchPasswordsByDomainQueryParams = zod.object({
+  "domain": zod.coerce.string()
+})
+
+export const MatchPasswordsByDomainResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "username": zod.string(),
+  "password": zod.string(),
+  "url": zod.string().nullish(),
+  "category": zod.string(),
+  "notes": zod.string().nullish(),
+  "strength": zod.enum(['weak', 'medium', 'strong']).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const MatchPasswordsByDomainResponse = zod.array(MatchPasswordsByDomainResponseItem)
+
+
+/**
  * @summary List all documents
  */
 export const ListDocumentsQueryParams = zod.object({

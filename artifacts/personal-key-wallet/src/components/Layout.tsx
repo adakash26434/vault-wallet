@@ -6,7 +6,8 @@ import {
   FileText, 
   Wallet, 
   LineChart, 
-  ActivitySquare 
+  ActivitySquare,
+  PuzzleIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -22,6 +23,7 @@ const navItems = [
   { href: "/finance", label: "Finance", icon: Wallet },
   { href: "/finance/analytics", label: "Analytics", icon: LineChart },
   { href: "/insights", label: "Insights", icon: ActivitySquare },
+  { href: "/extension", label: "Extension", icon: PuzzleIcon },
 ];
 
 export default function Layout({ children }: LayoutProps) {

@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCreateFinanceRecord, useUpdateFinanceRecord, getListFinanceRecordsQueryKey, getGetFinanceSummaryQueryKey } from "@workspace/api-client-react";
-import { FinanceRecord, FinanceInputType } from "@workspace/api-client-react/src/generated/api.schemas";
+import { FinanceRecord, FinanceInputType } from "@workspace/api-client-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";

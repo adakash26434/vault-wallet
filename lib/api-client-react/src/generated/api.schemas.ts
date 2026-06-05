@@ -206,6 +206,10 @@ search?: string;
 category?: string;
 };
 
+export type MatchPasswordsByDomainParams = {
+domain: string;
+};
+
 export type ListDocumentsParams = {
 category?: string;
 };

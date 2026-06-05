@@ -3,7 +3,7 @@ import { useGetDashboardAlerts, useGetDashboardOverview } from "@workspace/api-c
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, ShieldCheck, ShieldAlert, AlertCircle, Info, KeyRound, FileText, Wallet } from "lucide-react";
-import { Alert } from "@workspace/api-client-react/src/generated/api.schemas";
+import { Alert } from "@workspace/api-client-react";
 import { formatDistanceToNow } from "date-fns";
 
 function AlertIcon({ type, severity }: { type: string, severity: string }) {

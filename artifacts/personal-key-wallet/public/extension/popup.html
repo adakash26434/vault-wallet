@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Personal Key Wallet</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div id="app">
+    <div class="header">
+      <div class="header-left">
+        <div class="logo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <span class="brand">KeyWallet</span>
+      </div>
+      <button class="settings-btn" id="settingsBtn" title="Settings">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.07 4.93A10 10 0 0 0 4.93 19.07M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+      </button>
+    </div>
+
+    <div id="setupView" class="view hidden">
+      <div class="setup-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="1.5">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <h2>Connect Your Vault</h2>
+      <p class="setup-desc">Enter your Personal Key Wallet URL to get started.</p>
+      <div class="input-group">
+        <label for="apiUrlInput">Vault URL</label>
+        <input type="url" id="apiUrlInput" placeholder="https://your-app.replit.app" autocomplete="off" spellcheck="false" />
+      </div>
+      <button class="btn-primary" id="saveUrlBtn">Connect Vault</button>
+    </div>
+
+    <div id="mainView" class="view hidden">
+      <div class="domain-bar" id="domainBar">
+        <div class="domain-dot"></div>
+        <span id="currentDomain">Loading...</span>
+      </div>
+
+      <div id="loadingState" class="state-container hidden">
+        <div class="spinner"></div>
+        <p>Searching vault...</p>
+      </div>
+
+      <div id="emptyState" class="state-container hidden">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="1.5">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <p>No saved passwords for this site</p>
+        <a class="link-btn" id="addNewLink" href="#" target="_blank">Add password in vault</a>
+      </div>
+
+      <div id="matchList" class="match-list hidden"></div>
+
+      <div class="footer">
+        <a class="open-vault-link" id="openVaultLink" href="#" target="_blank">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          Open Full Vault
+        </a>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

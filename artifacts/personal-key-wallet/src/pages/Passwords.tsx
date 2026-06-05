@@ -10,13 +10,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { KeyRound, Plus, Search, Copy, MoreVertical, Trash2, Edit, Check } from "lucide-react";
+import { KeyRound, Plus, Search, Copy, MoreVertical, Trash2, Edit, Check, User, Wand2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import PasswordFormDialog from "@/components/PasswordFormDialog";
-import { PasswordEntry } from "@workspace/api-client-react/src/generated/api.schemas";
+import { PasswordEntry } from "@workspace/api-client-react";
 
 function StrengthBadge({ strength }: { strength?: string }) {
   if (strength === 'strong') return <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30">Strong</Badge>;
@@ -29,6 +29,7 @@ export default function Passwords() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [editingPassword, setEditingPassword] = useState<PasswordEntry | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [copiedUsernameId, setCopiedUsernameId] = useState<number | null>(null);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -52,6 +53,13 @@ export default function Passwords() {
     setCopiedId(id);
     toast({ title: "Password copied to clipboard", duration: 2000 });
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleCopyUsername = (username: string, id: number) => {
+    navigator.clipboard.writeText(username);
+    setCopiedUsernameId(id);
+    toast({ title: "Username copied to clipboard", duration: 2000 });
+    setTimeout(() => setCopiedUsernameId(null), 2000);
   };
 
   const handleDelete = (id: number) => {
@@ -105,6 +113,13 @@ export default function Passwords() {
         </div>
       )}
 
+      <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex items-center gap-3 text-sm">
+        <Wand2 className="h-4 w-4 text-primary flex-shrink-0" />
+        <span className="text-muted-foreground">
+          Click <strong className="text-foreground">Add Password</strong> then use the <strong className="text-foreground">Generate</strong> button to instantly create a strong, unique password.
+        </span>
+      </div>
+
       <div className="flex relative items-center w-full max-w-md">
         <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
         <Input 
@@ -138,12 +153,33 @@ export default function Passwords() {
             <Card key={pwd.id} className="bg-card border-border hover:border-primary/50 transition-colors group">
               <CardContent className="p-4 sm:p-6 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4 overflow-hidden">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex flex-shrink-0 items-center justify-center text-primary font-bold uppercase">
-                    {pwd.title.charAt(0)}
+                  <div className="relative h-10 w-10 flex-shrink-0">
+                    {pwd.url ? (
+                      <img
+                        src={`https://www.google.com/s2/favicons?domain=${pwd.url}&sz=32`}
+                        alt={pwd.title}
+                        className="h-10 w-10 rounded-full object-cover flex-shrink-0 bg-muted"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          (e.target as HTMLImageElement).nextSibling!.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className="h-10 w-10 rounded-full bg-primary/10 flex-shrink-0 items-center justify-center text-primary font-bold uppercase"
+                      style={{ display: pwd.url ? 'none' : 'flex' }}
+                    >
+                      {pwd.title.charAt(0)}
+                    </div>
                   </div>
                   <div className="min-w-0">
                     <h4 className="font-semibold text-foreground truncate">{pwd.title}</h4>
                     <p className="text-sm text-muted-foreground truncate">{pwd.username}</p>
+                    {pwd.url && (
+                      <p className="text-xs text-muted-foreground/60 truncate">
+                        {pwd.url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]}
+                      </p>
+                    )}
                   </div>
                 </div>
                 
@@ -156,8 +192,18 @@ export default function Passwords() {
                     <Button 
                       variant="secondary" 
                       size="icon"
+                      onClick={() => handleCopyUsername(pwd.username, pwd.id)}
+                      className={copiedUsernameId === pwd.id ? "bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30" : ""}
+                      title="Copy Username"
+                    >
+                      {copiedUsernameId === pwd.id ? <Check className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                    </Button>
+                    <Button 
+                      variant="secondary" 
+                      size="icon"
                       onClick={() => handleCopy(pwd.password, pwd.id)}
                       className={copiedId === pwd.id ? "bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30" : ""}
+                      title="Copy Password"
                     >
                       {copiedId === pwd.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>

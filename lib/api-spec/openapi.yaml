@@ -146,6 +146,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/PasswordStats"
 
+  /passwords/match:
+    get:
+      operationId: matchPasswordsByDomain
+      tags: [passwords]
+      summary: Find passwords matching a domain (for browser extension)
+      parameters:
+        - in: query
+          name: domain
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matching passwords
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PasswordEntry"
+
   /documents:
     get:
       operationId: listDocuments

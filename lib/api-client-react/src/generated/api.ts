@@ -34,6 +34,7 @@ import type {
   ListDocumentsParams,
   ListFinanceRecordsParams,
   ListPasswordsParams,
+  MatchPasswordsByDomainParams,
   PasswordEntry,
   PasswordInput,
   PasswordStats,
@@ -569,6 +570,90 @@ export function useGetPasswordStats<TData = Awaited<ReturnType<typeof getPasswor
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetPasswordStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getMatchPasswordsByDomainUrl = (params: MatchPasswordsByDomainParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/passwords/match?${stringifiedParams}` : `/api/passwords/match`
+}
+
+/**
+ * @summary Find passwords matching a domain (for browser extension)
+ */
+export const matchPasswordsByDomain = async (params: MatchPasswordsByDomainParams, options?: RequestInit): Promise<PasswordEntry[]> => {
+
+  return customFetch<PasswordEntry[]>(getMatchPasswordsByDomainUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getMatchPasswordsByDomainQueryKey = (params?: MatchPasswordsByDomainParams,) => {
+    return [
+    `/api/passwords/match`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getMatchPasswordsByDomainQueryOptions = <TData = Awaited<ReturnType<typeof matchPasswordsByDomain>>, TError = ErrorType<unknown>>(params: MatchPasswordsByDomainParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof matchPasswordsByDomain>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getMatchPasswordsByDomainQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof matchPasswordsByDomain>>> = ({ signal }) => matchPasswordsByDomain(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof matchPasswordsByDomain>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type MatchPasswordsByDomainQueryResult = NonNullable<Awaited<ReturnType<typeof matchPasswordsByDomain>>>
+export type MatchPasswordsByDomainQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Find passwords matching a domain (for browser extension)
+ */
+
+export function useMatchPasswordsByDomain<TData = Awaited<ReturnType<typeof matchPasswordsByDomain>>, TError = ErrorType<unknown>>(
+ params: MatchPasswordsByDomainParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof matchPasswordsByDomain>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getMatchPasswordsByDomainQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

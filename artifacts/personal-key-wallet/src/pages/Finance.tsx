@@ -14,7 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import FinanceFormDialog from "@/components/FinanceFormDialog";
-import { FinanceRecord } from "@workspace/api-client-react/src/generated/api.schemas";
+import { FinanceRecord } from "@workspace/api-client-react";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 export default function Finance() {

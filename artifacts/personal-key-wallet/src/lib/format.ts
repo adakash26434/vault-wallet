@@ -1,11 +1,8 @@
 import { format } from "date-fns";
 
 export function formatCurrency(amount: number | undefined | null) {
-  if (amount === undefined || amount === null) return "$0.00";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
+  if (amount === undefined || amount === null) return "NPR 0";
+  return "NPR " + new Intl.NumberFormat("ne-NP").format(Math.round(amount));
 }
 
 export function formatDate(dateString: string | undefined | null) {

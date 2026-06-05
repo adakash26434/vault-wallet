@@ -10,6 +10,7 @@ import Documents from "@/pages/Documents";
 import Finance from "@/pages/Finance";
 import FinanceAnalytics from "@/pages/FinanceAnalytics";
 import Insights from "@/pages/Insights";
+import Extension from "@/pages/Extension";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +31,7 @@ function Router() {
         <Route path="/finance" component={Finance} />
         <Route path="/finance/analytics" component={FinanceAnalytics} />
         <Route path="/insights" component={Insights} />
+        <Route path="/extension" component={Extension} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCreatePassword, useUpdatePassword, getListPasswordsQueryKey, getGetPasswordStatsQueryKey } from "@workspace/api-client-react";
-import { PasswordEntry } from "@workspace/api-client-react/src/generated/api.schemas";
+import { PasswordEntry } from "@workspace/api-client-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
@@ -30,11 +30,40 @@ interface PasswordFormDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-const CATEGORIES = ["Personal", "Work", "Finance", "Social", "Shopping", "Other"];
+const CATEGORIES = ["Email", "Social", "Banking", "Mobile Wallet", "Work", "Shopping", "Entertainment", "Government", "Personal", "Other"];
+
+const DOMAIN_CATEGORY_MAP: Record<string, string> = {
+  gmail: "Email", yahoo: "Email", outlook: "Email", proton: "Email",
+  facebook: "Social", instagram: "Social", twitter: "Social", tiktok: "Social", linkedin: "Social",
+  esewa: "Mobile Wallet", khalti: "Mobile Wallet", imepay: "Mobile Wallet",
+  nbl: "Banking", nic: "Banking", prabhu: "Banking", siddhartha: "Banking", laxmi: "Banking",
+  nabil: "Banking", himalayan: "Banking", kumari: "Banking", mega: "Banking",
+  github: "Work", gitlab: "Work", jira: "Work", slack: "Work", notion: "Work",
+  netflix: "Entertainment", youtube: "Entertainment", spotify: "Entertainment", disney: "Entertainment",
+  daraz: "Shopping", amazon: "Shopping",
+  nagarik: "Government", moha: "Government",
+};
+
+function generatePassword(length = 16): string {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghjkmnpqrstuvwxyz";
+  const numbers = "23456789";
+  const symbols = "@#$%!&*";
+  const all = upper + lower + numbers + symbols;
+  let pwd = [
+    upper[Math.floor(Math.random() * upper.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    numbers[Math.floor(Math.random() * numbers.length)],
+    symbols[Math.floor(Math.random() * symbols.length)],
+  ];
+  for (let i = 4; i < length; i++) pwd.push(all[Math.floor(Math.random() * all.length)]);
+  return pwd.sort(() => Math.random() - 0.5).join("");
+}
 
 export default function PasswordFormDialog({ children, password, open, onOpenChange }: PasswordFormDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const isControlled = open !== undefined && onOpenChange !== undefined;
   const isOpen = isControlled ? open : internalOpen;
@@ -58,8 +87,10 @@ export default function PasswordFormDialog({ children, password, open, onOpenCha
     },
   });
   
-  // Update form if password changes
-  React.useEffect(() => {
+  const currentPassword = form.watch("password") || "";
+  const currentUrl = form.watch("url") || "";
+
+  useEffect(() => {
     if (password && isOpen) {
       form.reset({
         title: password.title,
@@ -80,6 +111,73 @@ export default function PasswordFormDialog({ children, password, open, onOpenCha
       });
     }
   }, [password, isOpen, form]);
+
+  useEffect(() => {
+    const currentCategory = form.getValues("category");
+    if (!currentUrl || (currentCategory !== "Personal" && currentCategory !== "")) return;
+    
+    try {
+      let domain = currentUrl;
+      if (currentUrl.includes("://")) {
+        domain = new URL(currentUrl).hostname;
+      }
+      domain = domain.replace(/^www\./, '').split('.')[0].toLowerCase();
+      
+      for (const [key, category] of Object.entries(DOMAIN_CATEGORY_MAP)) {
+        if (domain.includes(key)) {
+          form.setValue("category", category, { shouldValidate: true });
+          break;
+        }
+      }
+    } catch (e) {
+      // ignore invalid URLs
+    }
+  }, [currentUrl, form]);
+
+  const handleGeneratePassword = () => {
+    setIsGenerating(true);
+    setTimeout(() => setIsGenerating(false), 500);
+    const newPwd = generatePassword();
+    form.setValue("password", newPwd, { shouldValidate: true, shouldDirty: true });
+    setShowPassword(true);
+  };
+
+  const calculateStrength = (pwd: string) => {
+    if (!pwd) return 0;
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    return score;
+  };
+
+  const strengthScore = calculateStrength(currentPassword);
+  
+  const getStrengthColor = (index: number) => {
+    if (strengthScore === 0) return "bg-muted";
+    if (index >= strengthScore) return "bg-muted";
+    if (strengthScore === 1) return "bg-red-500";
+    if (strengthScore === 2) return "bg-orange-500";
+    if (strengthScore === 3) return "bg-amber-500";
+    return "bg-green-500";
+  };
+
+  const getStrengthText = () => {
+    if (strengthScore === 0) return "";
+    if (strengthScore === 1) return "Weak";
+    if (strengthScore === 2) return "Fair";
+    if (strengthScore === 3) return "Good";
+    return "Strong";
+  };
+
+  const getStrengthTextColor = () => {
+    if (strengthScore === 1) return "text-red-500";
+    if (strengthScore === 2) return "text-orange-500";
+    if (strengthScore === 3) return "text-amber-500";
+    if (strengthScore === 4) return "text-green-500";
+    return "text-muted-foreground";
+  };
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     if (password) {
@@ -172,7 +270,7 @@ export default function PasswordFormDialog({ children, password, open, onOpenCha
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || "Personal"}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a category" />
@@ -198,18 +296,47 @@ export default function PasswordFormDialog({ children, password, open, onOpenCha
                   <FormLabel>Password</FormLabel>
                   <div className="relative">
                     <FormControl>
-                      <Input type={showPassword ? "text" : "password"} {...field} />
+                      <Input type={showPassword ? "text" : "password"} className="pr-20" {...field} />
                     </FormControl>
-                    <Button 
-                      type="button"
-                      variant="ghost" 
-                      size="icon" 
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                    </Button>
+                    <div className="absolute right-0 top-0 h-full flex items-center pr-1">
+                      <Button 
+                        type="button"
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 hover:bg-transparent"
+                        onClick={handleGeneratePassword}
+                        title="Generate strong password"
+                      >
+                        <RefreshCw className={`h-4 w-4 text-muted-foreground ${isGenerating ? 'animate-spin' : ''}`} />
+                      </Button>
+                      <Button 
+                        type="button"
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                      </Button>
+                    </div>
                   </div>
+                  
+                  <div className="pt-2">
+                    <div className="flex gap-1 h-1.5 mb-1">
+                      {[0, 1, 2, 3].map((index) => (
+                        <div 
+                          key={index} 
+                          className={`flex-1 rounded-full transition-colors ${getStrengthColor(index)}`}
+                        />
+                      ))}
+                    </div>
+                    {strengthScore > 0 && (
+                      <div className={`text-xs text-right font-medium ${getStrengthTextColor()}`}>
+                        {getStrengthText()}
+                      </div>
+                    )}
+                  </div>
+                  
                   <FormMessage />
                 </FormItem>
               )}

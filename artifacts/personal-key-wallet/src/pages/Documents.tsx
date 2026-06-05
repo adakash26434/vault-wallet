@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import DocumentFormDialog from "@/components/DocumentFormDialog";
-import { Document } from "@workspace/api-client-react/src/generated/api.schemas";
+import { Document } from "@workspace/api-client-react";
 import { formatDate } from "@/lib/format";
 
 function ExpiryBadge({ doc }: { doc: Document }) {

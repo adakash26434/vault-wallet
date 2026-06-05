@@ -95,6 +95,28 @@ router.post("/passwords", async (req, res) => {
   });
 });
 
+router.get("/passwords/match", async (req, res) => {
+  const domain = req.query.domain as string;
+  if (!domain) return res.status(400).json({ error: "domain required" });
+
+  const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0].toLowerCase();
+
+  const rows = await db.select().from(passwordsTable);
+  const matched = rows.filter((r) => {
+    if (!r.url) return r.title.toLowerCase().includes(cleanDomain.split(".")[0]);
+    const rowDomain = r.url.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0].toLowerCase();
+    return rowDomain.includes(cleanDomain) || cleanDomain.includes(rowDomain.split(".")[0]);
+  });
+
+  return res.json(
+    matched.map((r) => ({
+      ...r,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    }))
+  );
+});
+
 router.get("/passwords/stats", async (req, res) => {
   const rows = await db.select().from(passwordsTable);
   const passwords = rows.map((r) => r.password);
