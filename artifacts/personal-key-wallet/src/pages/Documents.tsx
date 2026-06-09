@@ -7,9 +7,11 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   FileText, Plus, MoreVertical, Trash2, Edit, ExternalLink,
-  CalendarClock, Eye, ShieldCheck, CreditCard, Heart, Car, Home, Landmark,
+  CalendarClock, Eye, ShieldCheck, CreditCard, Heart, Car,
+  Home, Landmark, Search, Filter,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -25,18 +27,18 @@ import DocumentFormDialog from "@/components/DocumentFormDialog";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
 import { Document } from "@workspace/api-client-react";
 import { formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
-  Identity: ShieldCheck,
-  Financial: CreditCard,
-  Medical: Heart,
-  Vehicle: Car,
-  Property: Home,
+  Identity:   ShieldCheck,
+  Financial:  CreditCard,
+  Medical:    Heart,
+  Vehicle:    Car,
+  Property:   Home,
   Government: Landmark,
-  Other: FileText,
+  Other:      FileText,
 };
 
-// Updated for light professional theme — proper contrast on white cards
 const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
   Identity:   { bg: "bg-blue-100",   text: "text-blue-700" },
   Financial:  { bg: "bg-emerald-100", text: "text-emerald-700" },
@@ -46,6 +48,8 @@ const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
   Government: { bg: "bg-amber-100",  text: "text-amber-700" },
   Other:      { bg: "bg-slate-100",  text: "text-slate-600" },
 };
+
+const ALL_CATEGORIES = ["All", "Identity", "Financial", "Medical", "Vehicle", "Property", "Government", "Other"];
 
 function ExpiryBadge({ doc }: { doc: Document }) {
   if (!doc.expiryDate) return null;
@@ -58,13 +62,13 @@ function ExpiryBadge({ doc }: { doc: Document }) {
       </Badge>
     );
   return (
-    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">
-      Valid
-    </Badge>
+    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">Valid</Badge>
   );
 }
 
 export default function Documents() {
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
   const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -77,6 +81,34 @@ export default function Documents() {
     { query: { queryKey: getListDocumentsQueryKey() } }
   );
   const deleteMutation = useDeleteDocument();
+
+  // Client-side search + category filter
+  const filtered = React.useMemo(() => {
+    if (!documents) return [];
+    let result = documents;
+    if (selectedCategory !== "All") result = result.filter((d) => d.category === selectedCategory);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((d) =>
+        d.name.toLowerCase().includes(q) ||
+        d.category.toLowerCase().includes(q) ||
+        (d.documentNumber ?? "").toLowerCase().includes(q) ||
+        (d.issuedBy ?? "").toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [documents, selectedCategory, search]);
+
+  // Category counts
+  const categoryCounts = React.useMemo(() => {
+    if (!documents) return {} as Record<string, number>;
+    return documents.reduce<Record<string, number>>((acc, d) => {
+      acc[d.category] = (acc[d.category] ?? 0) + 1;
+      return acc;
+    }, {});
+  }, [documents]);
+
+  const expiringSoon = documents?.filter((d) => !d.isExpired && d.daysUntilExpiry != null && d.daysUntilExpiry <= 30).length ?? 0;
 
   const handleDeleteConfirm = () => {
     if (deletingId == null) return;
@@ -97,49 +129,115 @@ export default function Documents() {
   };
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Secure Documents</h1>
           <p className="text-muted-foreground mt-0.5 text-[14px]">
-            Store and preview your important Nepali documents.
+            Store and access your important Nepali documents — encrypted and safe.
           </p>
         </div>
-        <DocumentFormDialog>
-          <Button style={{ background: "hsl(var(--primary))" }}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Document
-          </Button>
-        </DocumentFormDialog>
+        <div className="flex items-center gap-2">
+          {expiringSoon > 0 && (
+            <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+              {expiringSoon} expiring soon
+            </Badge>
+          )}
+          <DocumentFormDialog>
+            <Button style={{ background: "hsl(var(--primary))" }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Document
+            </Button>
+          </DocumentFormDialog>
+        </div>
       </div>
 
-      <div className="space-y-4">
+      {/* Search */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, number, or issuing authority…"
+            className="pl-9 bg-white border-border h-10"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        {/* Category filter */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+          <Filter className="h-3.5 w-3.5 text-muted-foreground shrink-0 ml-1" />
+          {ALL_CATEGORIES.map((cat) => {
+            const count = cat === "All" ? (documents?.length ?? 0) : (categoryCounts[cat] ?? 0);
+            if (cat !== "All" && count === 0) return null;
+            const isActive = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={cn(
+                  "shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold transition-all border",
+                  isActive
+                    ? "bg-primary text-white border-primary shadow-sm"
+                    : "bg-white text-muted-foreground border-border hover:border-primary/30 hover:text-foreground"
+                )}
+              >
+                {cat}
+                {count > 0 && (
+                  <span className={cn(
+                    "text-[10.5px] rounded-full px-1.5 py-0.5 leading-none font-bold",
+                    isActive ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                  )}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Document grid */}
+      <div>
         {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-xl" />
-          ))
-        ) : documents?.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-36 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : filtered.length === 0 && documents?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-border rounded-xl bg-white">
             <div className="h-16 w-16 rounded-2xl bg-violet-100 flex items-center justify-center mb-4">
               <FileText className="h-8 w-8 text-violet-600" />
             </div>
             <h3 className="text-[16px] font-bold">No documents yet</h3>
             <p className="text-[13px] text-muted-foreground mt-1 mb-5 max-w-xs">
-              Add your citizenship card, passport, driving licence, and other important documents.
+              Add your citizenship card, passport, driving licence, PAN card, and other important documents.
             </p>
             <DocumentFormDialog>
               <Button variant="outline">Add your first document</Button>
             </DocumentFormDialog>
           </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-xl bg-white">
+            <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
+            <h3 className="text-[15px] font-bold">No matches</h3>
+            <p className="text-[13px] text-muted-foreground mt-1">Try a different search term or category.</p>
+            <Button variant="ghost" className="mt-3 text-[13px]"
+              onClick={() => { setSearch(""); setSelectedCategory("All"); }}>
+              Clear filters
+            </Button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {documents?.map((doc) => {
+            {filtered.map((doc) => {
               const CategoryIcon = CATEGORY_ICONS[doc.category] ?? FileText;
               const style = CATEGORY_STYLES[doc.category] ?? CATEGORY_STYLES.Other;
               return (
                 <Card
                   key={doc.id}
-                  className="bg-white border-border hover:border-[hsl(var(--primary))/50] transition-all group cursor-pointer"
+                  className="bg-white border-border hover:border-primary/30 transition-all group cursor-pointer"
                   style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
                   onClick={() => setPreviewDocument(doc)}
                 >
@@ -151,10 +249,15 @@ export default function Documents() {
                         </div>
                         <div className="min-w-0">
                           <h4 className="font-bold text-[14px] text-foreground truncate">{doc.name}</h4>
-                          <p className={`text-[12px] font-medium ${style.text}`}>{doc.category}</p>
+                          <p className={`text-[12px] font-semibold ${style.text}`}>{doc.category}</p>
                           {doc.documentNumber && (
                             <p className="text-[11px] text-muted-foreground font-mono truncate mt-0.5">
                               #{doc.documentNumber}
+                            </p>
+                          )}
+                          {doc.issuedBy && (
+                            <p className="text-[11px] text-muted-foreground truncate">
+                              Issued by: {doc.issuedBy}
                             </p>
                           )}
                         </div>
@@ -196,7 +299,7 @@ export default function Documents() {
                             Expires {formatDate(doc.expiryDate)}
                           </>
                         ) : (
-                          <span className="text-[12px]">No expiry date</span>
+                          <span className="text-[12px] text-muted-foreground/60">No expiry date</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
@@ -213,6 +316,14 @@ export default function Documents() {
           </div>
         )}
       </div>
+
+      {/* Results count */}
+      {filtered.length > 0 && (documents?.length ?? 0) > 0 && (
+        <p className="text-center text-[12px] text-muted-foreground pb-2">
+          Showing {filtered.length} of {documents?.length} documents
+          {selectedCategory !== "All" ? ` in "${selectedCategory}"` : ""}
+        </p>
+      )}
 
       {/* Delete confirmation */}
       <AlertDialog open={deletingId != null} onOpenChange={(o) => !o && setDeletingId(null)}>
