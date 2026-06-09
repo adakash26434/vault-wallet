@@ -4,3 +4,4 @@
 - [Finance API param types](finance-params.md) — ListFinanceRecords month=string (use String(n)); GetFinanceSummary month=number. Always check generated schemas before passing params.
 - [encryptField null handling](encryption.md) — encryptField returns string|null; use ?? "" for required DB cols, ?? undefined for optional cols.
 - [requireAuth middleware](auth-middleware.md) — placed in routes/index.ts after authRouter+healthRouter; attaches req.userId; return-then-send pattern avoids TS7030.
+- [otplib v13 API](otplib-v13-api.md) — v13 has NO authenticator object; use top-level generateSecret/generateURI/verify functions instead.

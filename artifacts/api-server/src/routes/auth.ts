@@ -5,9 +5,12 @@ const bcrypt = require("bcryptjs") as typeof import("bcryptjs");
 const jwt = require("jsonwebtoken") as typeof import("jsonwebtoken");
 const QRCode = require("qrcode") as typeof import("qrcode");
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const _otplib = require("otplib") as any;
+// otplib v13 — no authenticator sub-object; use top-level functions directly
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const authenticator: any = _otplib.authenticator ?? _otplib.default?.authenticator ?? _otplib;
+const _otplib = require("otplib") as any;
+const otpGenerateSecret: () => string = _otplib.generateSecret;
+const otpGenerateURI: (opts: Record<string, unknown>) => string = _otplib.generateURI;
+const otpVerify: (opts: { token: string; secret: string }) => boolean = _otplib.verify;
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -70,7 +73,7 @@ router.post("/auth/signup", async (req, res) => {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const totpSecret = authenticator.generateSecret();
+  const totpSecret = otpGenerateSecret();
   const encryptedTotpSecret = encryptField(totpSecret) ?? totpSecret;
 
   const [user] = await db
@@ -78,7 +81,7 @@ router.post("/auth/signup", async (req, res) => {
     .values({ email: email.toLowerCase(), passwordHash, totpSecret: encryptedTotpSecret, name, totpEnabled: false })
     .returning();
 
-  const totpUri = authenticator.keyuri(email, APP_NAME, totpSecret);
+  const totpUri = otpGenerateURI({ type: "totp", label: `${APP_NAME}:${email}`, secret: totpSecret, issuer: APP_NAME });
   const qrCodeDataUrl = await QRCode.toDataURL(totpUri);
 
   const tempToken = signTemp({ userId: user.id, type: "setup" });
@@ -109,8 +112,7 @@ router.post("/auth/verify-setup", async (req, res) => {
   }
 
   const plainSecret = decryptField(user.totpSecret) ?? user.totpSecret;
-  authenticator.options = { window: 1 };
-  const isValid = authenticator.verify({ token: code, secret: plainSecret });
+  const isValid = otpVerify({ token: code, secret: plainSecret });
   if (!isValid) {
     return res.status(400).json({ error: "Invalid 2FA code. Please check your authenticator app." });
   }
@@ -172,8 +174,7 @@ router.post("/auth/verify", async (req, res) => {
   }
 
   const plainSecret2 = decryptField(user.totpSecret) ?? user.totpSecret;
-  authenticator.options = { window: 1 };
-  const isValid = authenticator.verify({ token: code, secret: plainSecret2 });
+  const isValid = otpVerify({ token: code, secret: plainSecret2 });
   if (!isValid) {
     return res.status(400).json({ error: "Invalid 2FA code. Please check your authenticator app." });
   }
