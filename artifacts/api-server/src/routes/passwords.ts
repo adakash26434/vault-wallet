@@ -92,11 +92,11 @@ router.post("/passwords", async (req, res) => {
     .insert(passwordsTable)
     .values({
       title,
-      username: encryptField(username),
+      username: encryptField(username) ?? "",
       password: encryptField(password) ?? "",
-      url: encryptField(url),
+      url: encryptField(url) ?? undefined,
       category: category ?? "General",
-      notes: encryptField(notes),
+      notes: encryptField(notes) ?? undefined,
       strength,
     })
     .returning();

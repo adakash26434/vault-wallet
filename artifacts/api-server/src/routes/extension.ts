@@ -14,7 +14,8 @@ const EXT_DIR = path.resolve(
 
 router.get("/extension/download", (req, res) => {
   if (!fs.existsSync(EXT_DIR)) {
-    return res.status(404).json({ error: "Extension files not found" });
+    res.status(404).json({ error: "Extension files not found" });
+    return;
   }
 
   res.setHeader("Content-Type", "application/zip");

@@ -51,7 +51,7 @@ function ExpiryBadge({ doc }: { doc: Document }) {
   if (!doc.expiryDate) return null;
   if (doc.isExpired)
     return <Badge className="bg-red-100 text-red-700 border-red-200 hover:bg-red-100">Expired</Badge>;
-  if (doc.daysUntilExpiry !== undefined && doc.daysUntilExpiry <= 30)
+  if (doc.daysUntilExpiry != null && doc.daysUntilExpiry <= 30)
     return (
       <Badge className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100">
         Expires in {doc.daysUntilExpiry}d

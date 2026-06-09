@@ -46,8 +46,8 @@ export default function Finance() {
   const { toast } = useToast();
 
   const { data: records, isLoading } = useListFinanceRecords(
-    { month: selectedMonth, year: selectedYear },
-    { query: { queryKey: getListFinanceRecordsQueryKey({ month: selectedMonth, year: selectedYear }) } }
+    { month: String(selectedMonth), year: selectedYear },
+    { query: { queryKey: getListFinanceRecordsQueryKey({ month: String(selectedMonth), year: selectedYear }) } }
   );
   const { data: summary, isLoading: isLoadingSummary } = useGetFinanceSummary(
     { month: selectedMonth, year: selectedYear },

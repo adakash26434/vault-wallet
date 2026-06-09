@@ -1,2 +1,6 @@
 - [API server CJS interop](api-server-cjs-interop.md) — bcryptjs, jsonwebtoken, qrcode, otplib all need createRequire pattern; zod must be in api-server deps (catalog:); use z.string().email() not z.email() (v3).
 - [OpenAPI schema naming](openapi-schema-naming.md) — Auth schemas must use Auth* prefix (AuthLoginBody etc.) to avoid Orval duplicate-export conflicts in api-zod barrel.
+- [otplib cast pattern](api-server-cjs-interop.md) — cast otplib as `any` (not as TOTP class); typed cast breaks authenticator.options and .verify() signatures.
+- [Finance API param types](finance-params.md) — ListFinanceRecords month=string (use String(n)); GetFinanceSummary month=number. Always check generated schemas before passing params.
+- [encryptField null handling](encryption.md) — encryptField returns string|null; use ?? "" for required DB cols, ?? undefined for optional cols.
+- [requireAuth middleware](auth-middleware.md) — placed in routes/index.ts after authRouter+healthRouter; attaches req.userId; return-then-send pattern avoids TS7030.

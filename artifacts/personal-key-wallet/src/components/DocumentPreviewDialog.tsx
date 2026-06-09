@@ -89,7 +89,7 @@ function CopyField({ label, value, icon: Icon }: { label: string; value: string;
 function ExpiryBadge({ doc }: { doc: Document }) {
   if (!doc.expiryDate) return null;
   if (doc.isExpired) return <Badge variant="destructive" className="text-xs">Expired</Badge>;
-  if (doc.daysUntilExpiry !== undefined && doc.daysUntilExpiry <= 30)
+  if (doc.daysUntilExpiry != null && doc.daysUntilExpiry <= 30)
     return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs">Expiring in {doc.daysUntilExpiry} days</Badge>;
   return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">Valid</Badge>;
 }
