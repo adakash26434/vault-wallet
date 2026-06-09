@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { VitePWA } from "vite-plugin-pwa";
 
 const rawPort = process.env.PORT;
 
@@ -32,6 +33,48 @@ export default defineConfig({
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["favicon.svg", "pwa-192.png", "pwa-512.png"],
+      manifest: {
+        name: "Key Wallet — Nepal Password Manager",
+        short_name: "Key Wallet",
+        description: "Secure digital vault for Nepali users — manage passwords, documents, and finances with AES-256 encryption and Google Authenticator 2FA.",
+        theme_color: "#0078D4",
+        background_color: "#F3F5F7",
+        display: "standalone",
+        orientation: "portrait",
+        start_url: "/",
+        scope: "/",
+        lang: "ne",
+        categories: ["utilities", "productivity", "finance"],
+        icons: [
+          { src: "pwa-192.png", sizes: "192x192", type: "image/png" },
+          { src: "pwa-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+        ],
+        shortcuts: [
+          { name: "Passwords", short_name: "Passwords", url: "/vault/passwords", description: "Open password vault" },
+          { name: "Finance", short_name: "Finance", url: "/finance", description: "View finance records" },
+        ],
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        navigateFallback: "index.html",
+        navigateFallbackDenylist: [/^\/api\//],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: "CacheFirst",
+            options: { cacheName: "google-fonts-cache", expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } },
+          },
+          {
+            urlPattern: /^https:\/\/www\.google\.com\/s2\/favicons\/.*/i,
+            handler: "CacheFirst",
+            options: { cacheName: "favicon-cache", expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 } },
+          },
+        ],
+      },
+    }),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [

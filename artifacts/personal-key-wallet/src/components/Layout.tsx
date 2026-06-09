@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, KeyRound, FileText, Wallet, BarChart3,
   Lightbulb, ShieldCheck, LogOut, ChevronRight, User,
-  Bell, Search, Menu, BookOpen,
+  Bell, Search, Menu, BookOpen, Download, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -42,7 +42,7 @@ const navSections = [
     label: "Tools",
     items: [
       { href: "/insights", label: "Insights", icon: Lightbulb },
-      { href: "/extension", label: "Security Guide", icon: BookOpen },
+      { href: "/extension", label: "Extension & App", icon: BookOpen },
     ],
   },
 ];
@@ -102,11 +102,43 @@ export default function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const [cmdOpen, setCmdOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
+  const [pwaInstalled, setPwaInstalled] = useState(false);
+  const [showPwaBanner, setShowPwaBanner] = useState(false);
+  const pwaPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
 
   const pageTitle = PAGE_TITLES[location] ?? "Personal Key Wallet";
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : user?.email?.[0]?.toUpperCase() ?? "U";
+
+  // PWA install prompt
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      const prompt = e as Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
+      pwaPromptRef.current = prompt;
+      const dismissed = sessionStorage.getItem("kw-pwa-dismissed");
+      if (!dismissed) setShowPwaBanner(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", () => { setPwaInstalled(true); setShowPwaBanner(false); });
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  async function installPWA() {
+    const p = pwaPromptRef.current;
+    if (!p) return;
+    await p.prompt();
+    const { outcome } = await p.userChoice;
+    if (outcome === "accepted") { setPwaInstalled(true); setShowPwaBanner(false); }
+    pwaPromptRef.current = null;
+  }
+
+  function dismissPwaBanner() {
+    setShowPwaBanner(false);
+    sessionStorage.setItem("kw-pwa-dismissed", "1");
+  }
 
   // Cmd+K / Ctrl+K keyboard shortcut
   useEffect(() => {
@@ -175,7 +207,40 @@ export default function Layout({ children }: LayoutProps) {
   );
 
   return (
-    <div className="flex min-h-[100dvh] w-full bg-background text-foreground font-sans">
+    <div className="flex flex-col min-h-[100dvh] w-full bg-background text-foreground font-sans">
+
+      {/* ── PWA Install Banner ── */}
+      {showPwaBanner && !pwaInstalled && (
+        <div
+          className="flex items-center gap-3 px-4 py-2.5 text-white text-sm shrink-0 relative z-50"
+          style={{ background: "linear-gradient(90deg,#0078D4 0%,#005A9E 100%)" }}
+        >
+          <div className="h-7 w-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+            <Download className="h-3.5 w-3.5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="font-semibold">Install Key Wallet App</span>
+            <span className="text-white/75 text-xs ml-2 hidden sm:inline">
+              Home screen ma add garnu — offline pani kaam garcha
+            </span>
+          </div>
+          <button
+            onClick={installPWA}
+            className="shrink-0 px-3 py-1 rounded-md bg-white text-[#0078D4] text-xs font-bold hover:bg-white/90 transition-colors"
+          >
+            Install
+          </button>
+          <button
+            onClick={dismissPwaBanner}
+            className="shrink-0 ml-1 p-1 rounded hover:bg-white/20 transition-colors"
+            aria-label="Dismiss"
+          >
+            <X className="h-3.5 w-3.5 text-white/80" />
+          </button>
+        </div>
+      )}
+
+    <div className="flex flex-1 overflow-hidden">
       <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
 
       {/* ── Desktop Sidebar ── */}
@@ -301,6 +366,7 @@ export default function Layout({ children }: LayoutProps) {
           </motion.div>
         </main>
       </div>
+    </div>
     </div>
   );
 }

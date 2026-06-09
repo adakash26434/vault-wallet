@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Key Wallet</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:380px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:13px;color:#1A202C;background:#F8FAFC;min-height:100px}
+.hidden{display:none!important}
+
+/* ── Auth views ── */
+.auth-wrap{padding:28px 22px 20px}
+.auth-logo{display:flex;flex-direction:column;align-items:center;margin-bottom:22px}
+.logo-box{width:52px;height:52px;background:#0078D4;border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,120,212,.3);margin-bottom:10px}
+.auth-logo h2{font-size:18px;font-weight:700;color:#1A202C}
+.auth-logo p{font-size:12px;color:#64748B;margin-top:2px}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:11.5px;font-weight:600;color:#475569;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.form-group input{width:100%;height:38px;padding:0 12px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:13px;outline:none;background:white;transition:border-color .15s}
+.form-group input:focus{border-color:#0078D4;box-shadow:0 0 0 3px rgba(0,120,212,.1)}
+.btn-primary{width:100%;height:40px;background:#0078D4;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;margin-top:4px}
+.btn-primary:hover{background:#006BBE}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed}
+.btn-ghost{width:100%;height:38px;background:transparent;color:#64748B;border:1.5px solid #E2E8F0;border-radius:8px;font-size:13px;cursor:pointer;margin-top:8px;transition:all .15s}
+.btn-ghost:hover{border-color:#CBD5E1;color:#1A202C}
+.msg-error{background:#FEF2F2;color:#DC2626;border:1px solid #FCA5A5;border-radius:7px;padding:8px 12px;font-size:12px;margin-bottom:10px}
+.msg-info{background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:7px;padding:8px 12px;font-size:12px;margin-bottom:10px}
+
+/* TOTP */
+#totp-code{text-align:center;font-size:26px!important;font-weight:700;letter-spacing:10px;height:58px!important;margin-bottom:14px}
+
+/* Auth footer */
+.auth-foot{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px solid #F1F5F9;font-size:11.5px;color:#94A3B8}
+.auth-foot a{color:#0078D4;text-decoration:none;font-weight:500}
+.auth-foot a:hover{text-decoration:underline}
+
+/* ── Main view ── */
+.main-header{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:#0078D4;color:white}
+.hdr-left{display:flex;align-items:center;gap:8px}
+.hdr-icon{width:28px;height:28px;background:rgba(255,255,255,.2);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.brand{font-size:15px;font-weight:700;color:white}
+.hdr-right{display:flex;align-items:center;gap:7px}
+.user-tag{font-size:11.5px;color:rgba(255,255,255,.85);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#btn-logout{width:28px;height:28px;background:rgba(255,255,255,.15);border:none;border-radius:6px;color:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+#btn-logout:hover{background:rgba(255,255,255,.28)}
+
+/* Search */
+.search-row{display:flex;align-items:center;gap:7px;padding:7px 12px;background:white;border-bottom:1px solid #E2E8F0}
+.search-row svg{color:#94A3B8;flex-shrink:0}
+#search-input{flex:1;border:none;outline:none;font-size:13px;color:#1A202C;height:26px;background:transparent}
+#search-input::placeholder{color:#94A3B8}
+#btn-clear{background:none;border:none;cursor:pointer;color:#94A3B8;font-size:14px;padding:2px 4px;line-height:1}
+
+/* Action bar */
+.action-row{display:flex;gap:7px;padding:7px 12px;background:white;border-bottom:1px solid #E2E8F0}
+#btn-fill{flex:1;height:33px;background:#0078D4;color:white;border:none;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:background .15s}
+#btn-fill:hover{background:#006BBE}
+#btn-add{height:33px;padding:0 13px;background:white;color:#0078D4;border:1.5px solid #0078D4;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+#btn-add:hover{background:#EFF6FF}
+
+/* Sort tabs */
+.sort-tabs{display:flex;padding:0 12px;background:white;border-bottom:1px solid #E2E8F0}
+.stab{padding:7px 10px;background:none;border:none;border-bottom:2px solid transparent;font-size:12px;font-weight:500;color:#64748B;cursor:pointer;transition:all .15s}
+.stab.on{color:#0078D4;border-bottom-color:#0078D4;font-weight:600}
+.stab:hover:not(.on){color:#1A202C}
+
+/* Password list */
+#pwd-list{max-height:300px;overflow-y:auto}
+#pwd-list::-webkit-scrollbar{width:4px}
+#pwd-list::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:2px}
+
+.pwd-item{display:flex;align-items:center;gap:9px;padding:8px 12px;background:white;border-bottom:1px solid #F1F5F9;cursor:pointer;position:relative;transition:background .1s}
+.pwd-item:hover{background:#F8FAFC}
+.pwd-item:hover .pwd-actions{opacity:1}
+.pwd-item:hover .s-dot{opacity:0}
+
+.pwd-fav{width:32px;height:32px;border-radius:8px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid #E8EEF4}
+.pwd-fav img{width:18px;height:18px;object-fit:contain}
+.pwd-ini{width:32px;height:32px;border-radius:8px;display:none;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0}
+
+.pwd-info{flex:1;min-width:0}
+.pwd-title{font-size:13px;font-weight:600;color:#1A202C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pwd-user{font-size:11.5px;color:#64748B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+
+.s-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:opacity .15s}
+.s-weak{background:#EF4444}
+.s-fair{background:#F59E0B}
+.s-strong,.s-very-strong{background:#22C55E}
+
+.pwd-actions{display:flex;gap:4px;opacity:0;transition:opacity .15s;position:absolute;right:8px}
+.act-btn{height:25px;padding:0 8px;border:1px solid #E2E8F0;border-radius:5px;font-size:11.5px;font-weight:500;cursor:pointer;background:white;color:#374151;transition:all .1s}
+.act-btn:hover{border-color:#0078D4;color:#0078D4;background:#EFF6FF}
+.act-fill{color:#0078D4;border-color:#BFDBFE;background:#EFF6FF}
+.act-fill:hover{background:#DBEAFE}
+
+/* States */
+.state-box{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;text-align:center;color:#94A3B8;gap:8px}
+.spinner{width:22px;height:22px;border:2.5px solid #E2E8F0;border-top-color:#0078D4;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.state-box p{font-size:13px}
+.state-box small{font-size:11.5px;color:#CBD5E1}
+
+/* Footer */
+.main-foot{display:flex;align-items:center;justify-content:space-between;padding:7px 13px;background:white;border-top:1px solid #E2E8F0;font-size:11.5px;color:#94A3B8}
+.main-foot a{color:#0078D4;text-decoration:none;font-weight:500}
+.main-foot a:hover{text-decoration:underline}
+
+/* Toast */
+#kw-toast{position:fixed;bottom:46px;left:50%;transform:translateX(-50%);background:#1A202C;color:white;padding:7px 14px;border-radius:8px;font-size:12.5px;font-weight:500;z-index:9999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2);transition:opacity .25s;pointer-events:none;opacity:0}
+#kw-toast.show{opacity:1}
+#kw-toast.err{background:#DC2626}
+</style>
+</head>
+<body>
+
+<!-- ── Auth view ── -->
+<div id="view-auth" class="auth-wrap">
+  <div class="auth-logo">
+    <div class="logo-box">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L4 6.5v5.5c0 5.25 3.5 10.15 8 11.35C16.5 22.15 20 17.25 20 12V6.5L12 2z" fill="white"/>
+        <path d="M9 12l2 2 4-4" stroke="#0078D4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h2>Key Wallet</h2>
+    <p>Nepal ko Secure Password Manager</p>
+  </div>
+  <div id="auth-err" class="msg-error hidden"></div>
+  <div class="form-group">
+    <label>Email Address</label>
+    <input type="email" id="auth-email" placeholder="tapai@example.com" autocomplete="email" />
+  </div>
+  <div class="form-group">
+    <label>Password</label>
+    <input type="password" id="auth-pass" placeholder="••••••••" autocomplete="current-password" />
+  </div>
+  <button id="btn-login" class="btn-primary">Sign In →</button>
+  <div class="auth-foot">
+    <span>🇳🇵 Made in Nepal</span>
+    <a id="link-vault-auth" href="#" target="_blank">Open Full Vault ↗</a>
+  </div>
+</div>
+
+<!-- ── TOTP view ── -->
+<div id="view-totp" class="auth-wrap hidden">
+  <div class="auth-logo">
+    <div class="logo-box">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+        <rect x="5" y="11" width="14" height="10" rx="2" fill="white"/>
+        <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="12" cy="16" r="1.5" fill="#0078D4"/>
+      </svg>
+    </div>
+    <h2>2FA Verification</h2>
+    <p>Google Authenticator bata 6-digit code halunus</p>
+  </div>
+  <div id="totp-err" class="msg-error hidden"></div>
+  <div class="form-group">
+    <label>Authenticator Code</label>
+    <input type="text" id="totp-code" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
+  </div>
+  <button id="btn-verify" class="btn-primary">Verify Code</button>
+  <button id="btn-back" class="btn-ghost">← Back to Login</button>
+</div>
+
+<!-- ── Main view ── -->
+<div id="view-main" class="hidden">
+  <div class="main-header">
+    <div class="hdr-left">
+      <div class="hdr-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L4 6.5v5.5c0 5.25 3.5 10.15 8 11.35C16.5 22.15 20 17.25 20 12V6.5L12 2z" fill="white"/>
+        </svg>
+      </div>
+      <span class="brand">Key Wallet</span>
+    </div>
+    <div class="hdr-right">
+      <span class="user-tag" id="user-tag"></span>
+      <button id="btn-logout" title="Sign out">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="search-row">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input type="text" id="search-input" placeholder="Search Key Wallet…" autocomplete="off" />
+    <button id="btn-clear" class="hidden">✕</button>
+  </div>
+
+  <div class="action-row">
+    <button id="btn-fill">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+      Fill on Page
+    </button>
+    <button id="btn-add">+ Add New</button>
+  </div>
+
+  <div class="sort-tabs">
+    <button class="stab on" data-sort="popular">Popular</button>
+    <button class="stab" data-sort="recent">Recent</button>
+    <button class="stab" data-sort="az">A–Z</button>
+  </div>
+
+  <div id="pwd-list"></div>
+
+  <div class="main-foot">
+    <span>🇳🇵 Key Wallet Nepal</span>
+    <a id="link-vault-main" href="#" target="_blank">Open Full Vault ↗</a>
+  </div>
+</div>
+
+<div id="kw-toast"></div>
+
+<script src="popup.js"></script>
+</body>
+</html>
