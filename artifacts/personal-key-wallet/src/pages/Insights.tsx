@@ -41,7 +41,7 @@ function ScoreRing({ score }: { score: number }) {
         </div>
       </div>
       <div className={`flex items-center gap-1.5 text-[14px] font-bold ${textColor}`}>
-        <Icon className="h-4.5 w-4.5" />
+        <Icon className="h-[18px] w-[18px]" />
         {label}
       </div>
     </div>
@@ -308,7 +308,7 @@ export default function Insights() {
               <CardContent className="p-5">
                 <div className="flex items-center gap-2.5 mb-3">
                   <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${color}`}>
-                    <Icon className="h-4.5 w-4.5" />
+                    <Icon className="h-[18px] w-[18px]" />
                   </div>
                   <h3 className="text-[14px] font-bold text-foreground">{title}</h3>
                 </div>

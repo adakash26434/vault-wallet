@@ -176,7 +176,7 @@ export default function Dashboard() {
               {loadingOv ? <Skeleton className="h-8 w-24" /> : (
                 <>
                   <div className={`text-3xl font-bold ${(overview?.monthlyBalance ?? 0) >= 0 ? "text-foreground" : "text-red-600"}`}>
-                    Rs.{Math.abs(overview?.monthlyBalance ?? 0).toLocaleString()}
+                    Rs. {Math.abs(overview?.monthlyBalance ?? 0).toLocaleString()}
                   </div>
                   <p className="text-[12px] text-muted-foreground mt-1">
                     {(overview?.monthlyBalance ?? 0) >= 0 ? "Net savings this month" : "Deficit this month"}

@@ -164,7 +164,7 @@ export default function Extension() {
         <CardHeader className="pb-3 pt-5 px-5">
           <div className="flex items-center gap-2.5">
             <div className="h-9 w-9 rounded-xl bg-red-100 flex items-center justify-center">
-              <Phone className="h-4.5 w-4.5 text-red-700" />
+              <Phone className="h-[18px] w-[18px] text-red-700" />
             </div>
             <div>
               <CardTitle className="text-[15px] font-bold">Emergency Helplines — Nepal</CardTitle>

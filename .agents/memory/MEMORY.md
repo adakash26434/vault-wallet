@@ -5,3 +5,4 @@
 - [encryptField null handling](encryption.md) — encryptField returns string|null; use ?? "" for required DB cols, ?? undefined for optional cols.
 - [requireAuth middleware](auth-middleware.md) — placed in routes/index.ts after authRouter+healthRouter; attaches req.userId; return-then-send pattern avoids TS7030.
 - [otplib v13 API](otplib-v13-api.md) — v13 has NO authenticator object; use top-level generateSecret/generateURI/verify functions instead.
+- [Tailwind v4 sizing](tailwind-v4-sizing.md) — h-4.5/w-4.5 are invalid in Tailwind v4 CSS-first config; use h-[18px] w-[18px] for 18px icons.

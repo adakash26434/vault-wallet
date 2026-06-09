@@ -20,10 +20,10 @@ const PALETTE = [
 ];
 
 function formatRs(n: number | undefined) {
-  if (n === undefined || n === null) return "Rs.0";
-  if (Math.abs(n) >= 100000) return `Rs.${(n / 100000).toFixed(1)}L`;
-  if (Math.abs(n) >= 1000) return `Rs.${(n / 1000).toFixed(1)}k`;
-  return `Rs.${n.toLocaleString()}`;
+  if (n === undefined || n === null) return "Rs. 0";
+  if (Math.abs(n) >= 100000) return `Rs. ${(n / 100000).toFixed(1)}L`;
+  if (Math.abs(n) >= 1000) return `Rs. ${(n / 1000).toFixed(1)}k`;
+  return `Rs. ${n.toLocaleString()}`;
 }
 
 function StatCard({
@@ -38,7 +38,7 @@ function StatCard({
         <div className="flex items-center justify-between mb-3">
           <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
           <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${bg}`}>
-            <Icon className={`h-4.5 w-4.5 ${color}`} />
+            <Icon className={`h-[18px] w-[18px] ${color}`} />
           </div>
         </div>
         <p className="text-2xl font-bold text-foreground">{value}</p>
