@@ -2,16 +2,22 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useCreatePassword, useUpdatePassword, getListPasswordsQueryKey, getGetPasswordStatsQueryKey } from "@workspace/api-client-react";
+import {
+  useCreatePassword, useUpdatePassword,
+  getListPasswordsQueryKey, getGetPasswordStatsQueryKey,
+} from "@workspace/api-client-react";
 import { PasswordEntry } from "@workspace/api-client-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
-import { Eye, EyeOff, Loader2, RefreshCw } from "lucide-react";
+import {
+  Eye, EyeOff, Loader2, RefreshCw, KeyRound, Globe,
+  User, Tag, StickyNote,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
@@ -30,14 +36,17 @@ interface PasswordFormDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-const CATEGORIES = ["Email", "Social", "Banking", "Mobile Wallet", "Work", "Shopping", "Entertainment", "Government", "Personal", "Other"];
+const CATEGORIES = [
+  "Email", "Social", "Banking", "Mobile Wallet", "Work",
+  "Shopping", "Entertainment", "Government", "Personal", "Other",
+];
 
 const DOMAIN_CATEGORY_MAP: Record<string, string> = {
   gmail: "Email", yahoo: "Email", outlook: "Email", proton: "Email",
   facebook: "Social", instagram: "Social", twitter: "Social", tiktok: "Social", linkedin: "Social",
   esewa: "Mobile Wallet", khalti: "Mobile Wallet", imepay: "Mobile Wallet",
-  nbl: "Banking", nic: "Banking", prabhu: "Banking", siddhartha: "Banking", laxmi: "Banking",
-  nabil: "Banking", himalayan: "Banking", kumari: "Banking", mega: "Banking",
+  nbl: "Banking", nic: "Banking", prabhu: "Banking", siddhartha: "Banking",
+  laxmi: "Banking", nabil: "Banking", himalayan: "Banking", kumari: "Banking", mega: "Banking",
   github: "Work", gitlab: "Work", jira: "Work", slack: "Work", notion: "Work",
   netflix: "Entertainment", youtube: "Entertainment", spotify: "Entertainment", disney: "Entertainment",
   daraz: "Shopping", amazon: "Shopping",
@@ -50,7 +59,7 @@ function generatePassword(length = 16): string {
   const numbers = "23456789";
   const symbols = "@#$%!&*";
   const all = upper + lower + numbers + symbols;
-  let pwd = [
+  const pwd = [
     upper[Math.floor(Math.random() * upper.length)],
     lower[Math.floor(Math.random() * lower.length)],
     numbers[Math.floor(Math.random() * numbers.length)],
@@ -60,21 +69,71 @@ function generatePassword(length = 16): string {
   return pwd.sort(() => Math.random() - 0.5).join("");
 }
 
-export default function PasswordFormDialog({ children, password, open, onOpenChange }: PasswordFormDialogProps) {
+function StrengthBar({ password }: { password: string }) {
+  const score = React.useMemo(() => {
+    if (!password) return 0;
+    let s = 0;
+    if (password.length >= 8) s++;
+    if (password.length >= 12) s++;
+    if (/[A-Z]/.test(password) && /[0-9]/.test(password)) s++;
+    if (/[^A-Za-z0-9]/.test(password)) s++;
+    return Math.min(s, 4);
+  }, [password]);
+
+  const config = [
+    { label: "", color: "" },
+    { label: "Weak", color: "bg-red-500" },
+    { label: "Fair", color: "bg-orange-400" },
+    { label: "Good", color: "bg-amber-400" },
+    { label: "Strong", color: "bg-emerald-500" },
+  ][score];
+
+  if (!password) return null;
+
+  return (
+    <div className="mt-2">
+      <div className="flex gap-1 h-1.5 mb-1.5">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className={`flex-1 rounded-full transition-all duration-300 ${
+              i <= score ? config.color : "bg-muted"
+            }`}
+          />
+        ))}
+      </div>
+      <div className="flex items-center justify-between">
+        <span className={`text-[11px] font-semibold ${
+          score === 1 ? "text-red-500" :
+          score === 2 ? "text-orange-500" :
+          score === 3 ? "text-amber-500" :
+          score === 4 ? "text-emerald-600" : ""
+        }`}>
+          {config.label}
+        </span>
+        <span className="text-[11px] text-muted-foreground">{password.length} chars</span>
+      </div>
+    </div>
+  );
+}
+
+export default function PasswordFormDialog({
+  children, password, open, onOpenChange,
+}: PasswordFormDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  
+  const [isSpinning, setIsSpinning] = useState(false);
+
   const isControlled = open !== undefined && onOpenChange !== undefined;
   const isOpen = isControlled ? open : internalOpen;
   const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
-  
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const createMutation = useCreatePassword();
   const updateMutation = useUpdatePassword();
-  
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -86,12 +145,13 @@ export default function PasswordFormDialog({ children, password, open, onOpenCha
       notes: password?.notes || "",
     },
   });
-  
+
   const currentPassword = form.watch("password") || "";
   const currentUrl = form.watch("url") || "";
 
   useEffect(() => {
-    if (password && isOpen) {
+    if (!isOpen) return;
+    if (password) {
       form.reset({
         title: password.title,
         username: password.username,
@@ -100,83 +160,33 @@ export default function PasswordFormDialog({ children, password, open, onOpenCha
         category: password.category || "Personal",
         notes: password.notes || "",
       });
-    } else if (!password && isOpen) {
-      form.reset({
-        title: "",
-        username: "",
-        password: "",
-        url: "",
-        category: "Personal",
-        notes: "",
-      });
+    } else {
+      form.reset({ title: "", username: "", password: "", url: "", category: "Personal", notes: "" });
     }
-  }, [password, isOpen, form]);
+  }, [password, isOpen]);
 
   useEffect(() => {
-    const currentCategory = form.getValues("category");
-    if (!currentUrl || (currentCategory !== "Personal" && currentCategory !== "")) return;
-    
+    if (!currentUrl) return;
+    const currentCat = form.getValues("category");
+    if (currentCat !== "Personal" && currentCat !== "") return;
     try {
       let domain = currentUrl;
-      if (currentUrl.includes("://")) {
-        domain = new URL(currentUrl).hostname;
-      }
-      domain = domain.replace(/^www\./, '').split('.')[0].toLowerCase();
-      
+      if (currentUrl.includes("://")) domain = new URL(currentUrl).hostname;
+      domain = domain.replace(/^www\./, "").split(".")[0].toLowerCase();
       for (const [key, category] of Object.entries(DOMAIN_CATEGORY_MAP)) {
         if (domain.includes(key)) {
           form.setValue("category", category, { shouldValidate: true });
           break;
         }
       }
-    } catch (e) {
-      // ignore invalid URLs
-    }
-  }, [currentUrl, form]);
+    } catch { /* ignore */ }
+  }, [currentUrl]);
 
-  const handleGeneratePassword = () => {
-    setIsGenerating(true);
-    setTimeout(() => setIsGenerating(false), 500);
-    const newPwd = generatePassword();
-    form.setValue("password", newPwd, { shouldValidate: true, shouldDirty: true });
+  const handleGenerate = () => {
+    setIsSpinning(true);
+    setTimeout(() => setIsSpinning(false), 500);
+    form.setValue("password", generatePassword(), { shouldValidate: true, shouldDirty: true });
     setShowPassword(true);
-  };
-
-  const calculateStrength = (pwd: string) => {
-    if (!pwd) return 0;
-    let score = 0;
-    if (pwd.length >= 8) score++;
-    if (/[A-Z]/.test(pwd)) score++;
-    if (/[0-9]/.test(pwd)) score++;
-    if (/[^A-Za-z0-9]/.test(pwd)) score++;
-    return score;
-  };
-
-  const strengthScore = calculateStrength(currentPassword);
-  
-  const getStrengthColor = (index: number) => {
-    if (strengthScore === 0) return "bg-muted";
-    if (index >= strengthScore) return "bg-muted";
-    if (strengthScore === 1) return "bg-red-500";
-    if (strengthScore === 2) return "bg-orange-500";
-    if (strengthScore === 3) return "bg-amber-500";
-    return "bg-green-500";
-  };
-
-  const getStrengthText = () => {
-    if (strengthScore === 0) return "";
-    if (strengthScore === 1) return "Weak";
-    if (strengthScore === 2) return "Fair";
-    if (strengthScore === 3) return "Good";
-    return "Strong";
-  };
-
-  const getStrengthTextColor = () => {
-    if (strengthScore === 1) return "text-red-500";
-    if (strengthScore === 2) return "text-orange-500";
-    if (strengthScore === 3) return "text-amber-500";
-    if (strengthScore === 4) return "text-green-500";
-    return "text-muted-foreground";
   };
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
@@ -187,16 +197,11 @@ export default function PasswordFormDialog({ children, password, open, onOpenCha
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListPasswordsQueryKey() });
             queryClient.invalidateQueries({ queryKey: getGetPasswordStatsQueryKey() });
-            toast({ title: "Password updated successfully" });
+            toast({ title: "Password updated" });
             setIsOpen(false);
           },
-          onError: (error: any) => {
-            toast({ 
-              title: "Failed to update password", 
-              description: error.message || "An error occurred", 
-              variant: "destructive" 
-            });
-          }
+          onError: (e: any) =>
+            toast({ title: "Failed to update", description: e.message, variant: "destructive" }),
         }
       );
     } else {
@@ -206,17 +211,12 @@ export default function PasswordFormDialog({ children, password, open, onOpenCha
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListPasswordsQueryKey() });
             queryClient.invalidateQueries({ queryKey: getGetPasswordStatsQueryKey() });
-            toast({ title: "Password added successfully" });
+            toast({ title: "Password saved securely" });
             setIsOpen(false);
             form.reset();
           },
-          onError: (error: any) => {
-            toast({ 
-              title: "Failed to add password", 
-              description: error.message || "An error occurred", 
-              variant: "destructive" 
-            });
-          }
+          onError: (e: any) =>
+            toast({ title: "Failed to save", description: e.message, variant: "destructive" }),
         }
       );
     }
@@ -227,38 +227,56 @@ export default function PasswordFormDialog({ children, password, open, onOpenCha
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{password ? "Edit Password" : "Add New Password"}</DialogTitle>
-          <DialogDescription>
-            {password ? "Update your stored credentials." : "Store a new secure credential in your vault."}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden gap-0">
+
+        {/* Header */}
+        <div className="bg-gradient-to-r from-[hsl(210,100%,40%)] to-[hsl(210,100%,32%)] px-6 pt-5 pb-4">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-white/15 flex items-center justify-center">
+                <KeyRound className="h-5 w-5 text-white" />
+              </div>
+              <DialogTitle className="text-[17px] font-bold text-white">
+                {password ? "Edit Credential" : "Add New Credential"}
+              </DialogTitle>
+            </div>
+            <p className="text-[12px] text-white/70 mt-1.5">
+              Stored with AES-256-GCM encryption
+            </p>
+          </DialogHeader>
+        </div>
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="px-6 py-5 space-y-4">
+
+            {/* Title */}
             <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title / Website Name</FormLabel>
+                  <FormLabel className="text-[13px] font-semibold">Service / Website Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Gmail" {...field} />
+                    <Input placeholder="e.g. Gmail, Facebook, NIC Asia" className="h-10 bg-muted/20" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <div className="grid grid-cols-2 gap-4">
+
+            {/* Username + Category */}
+            <div className="grid grid-cols-2 gap-3">
               <FormField
                 control={form.control}
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username / Email</FormLabel>
+                    <FormLabel className="text-[13px] font-semibold flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      Username / Email
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder="john@example.com" {...field} />
+                      <Input placeholder="you@example.com" className="h-10" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -269,15 +287,18 @@ export default function PasswordFormDialog({ children, password, open, onOpenCha
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel className="text-[13px] font-semibold flex items-center gap-1.5">
+                      <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                      Category
+                    </FormLabel>
                     <Select onValueChange={field.onChange} value={field.value || "Personal"}>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder="Category" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {CATEGORIES.map(c => (
+                        {CATEGORIES.map((c) => (
                           <SelectItem key={c} value={c}>{c}</SelectItem>
                         ))}
                       </SelectContent>
@@ -288,95 +309,104 @@ export default function PasswordFormDialog({ children, password, open, onOpenCha
               />
             </div>
 
+            {/* Password */}
             <FormField
               control={form.control}
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <div className="flex items-center justify-between">
+                    <FormLabel className="text-[13px] font-semibold flex items-center gap-1.5">
+                      <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
+                      Password
+                    </FormLabel>
+                    <button
+                      type="button"
+                      onClick={handleGenerate}
+                      className="flex items-center gap-1 text-[12px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${isSpinning ? "animate-spin" : ""}`} />
+                      Generate strong
+                    </button>
+                  </div>
                   <div className="relative">
                     <FormControl>
-                      <Input type={showPassword ? "text" : "password"} className="pr-20" {...field} />
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        className="h-10 pr-10 font-mono bg-muted/20"
+                        placeholder="Enter or generate a password"
+                        {...field}
+                      />
                     </FormControl>
-                    <div className="absolute right-0 top-0 h-full flex items-center pr-1">
-                      <Button 
-                        type="button"
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 hover:bg-transparent"
-                        onClick={handleGeneratePassword}
-                        title="Generate strong password"
-                      >
-                        <RefreshCw className={`h-4 w-4 text-muted-foreground ${isGenerating ? 'animate-spin' : ''}`} />
-                      </Button>
-                      <Button 
-                        type="button"
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                      </Button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((p) => !p)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
-                  
-                  <div className="pt-2">
-                    <div className="flex gap-1 h-1.5 mb-1">
-                      {[0, 1, 2, 3].map((index) => (
-                        <div 
-                          key={index} 
-                          className={`flex-1 rounded-full transition-colors ${getStrengthColor(index)}`}
-                        />
-                      ))}
-                    </div>
-                    {strengthScore > 0 && (
-                      <div className={`text-xs text-right font-medium ${getStrengthTextColor()}`}>
-                        {getStrengthText()}
-                      </div>
-                    )}
-                  </div>
-                  
+                  <StrengthBar password={currentPassword} />
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* URL */}
             <FormField
               control={form.control}
               name="url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>URL (Optional)</FormLabel>
+                  <FormLabel className="text-[13px] font-semibold flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                    Website URL
+                    <span className="font-normal text-muted-foreground">(optional)</span>
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="https://example.com" {...field} />
+                    <Input placeholder="https://example.com" className="h-10" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Notes */}
             <FormField
               control={form.control}
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormLabel className="text-[13px] font-semibold flex items-center gap-1.5">
+                    <StickyNote className="h-3.5 w-3.5 text-muted-foreground" />
+                    Notes
+                    <span className="font-normal text-muted-foreground">(optional)</span>
+                  </FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Any additional information" className="resize-none" {...field} />
+                    <Textarea
+                      placeholder="Security question, PIN, or additional info…"
+                      className="resize-none h-16 bg-muted/20"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="flex justify-end pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="mr-2">
+            {/* Actions */}
+            <div className="flex gap-2 pt-1">
+              <Button type="button" variant="outline" className="flex-1 h-10" onClick={() => setIsOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending}>
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="flex-1 h-10 font-bold"
+                style={{ background: "hsl(var(--primary))" }}
+              >
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {password ? "Save Changes" : "Add Password"}
+                {password ? "Save Changes" : "Save Password"}
               </Button>
             </div>
           </form>

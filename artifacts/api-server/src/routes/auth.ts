@@ -5,7 +5,9 @@ const bcrypt = require("bcryptjs") as typeof import("bcryptjs");
 const jwt = require("jsonwebtoken") as typeof import("jsonwebtoken");
 const QRCode = require("qrcode") as typeof import("qrcode");
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { authenticator } = require("otplib") as any;
+const _otplib = require("otplib") as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const authenticator: any = _otplib.authenticator ?? _otplib.default?.authenticator ?? _otplib;
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { z } from "zod";

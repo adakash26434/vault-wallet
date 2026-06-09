@@ -10,6 +10,9 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+// ── Trust the Replit reverse proxy so rate-limit sees the real client IP ───
+app.set("trust proxy", 1);
+
 // ── Security headers (Helmet) ──────────────────────────────────────────────
 app.use(
   helmet({
