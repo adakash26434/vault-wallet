@@ -15,6 +15,8 @@ import Login from "@/pages/auth/Login";
 import Signup from "@/pages/auth/Signup";
 import SetupTwoFactor from "@/pages/auth/SetupTwoFactor";
 import VerifyTwoFactor from "@/pages/auth/VerifyTwoFactor";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsOfService from "@/pages/TermsOfService";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 const queryClient = new QueryClient({
@@ -51,6 +53,8 @@ function PublicOnlyRoute({ component: Component }: { component: React.ComponentT
 function Router() {
   return (
     <Switch>
+      <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/terms" component={TermsOfService} />
       <Route path="/auth/login" component={() => <PublicOnlyRoute component={Login} />} />
       <Route path="/auth/signup" component={() => <PublicOnlyRoute component={Signup} />} />
       <Route path="/auth/setup-2fa" component={SetupTwoFactor} />

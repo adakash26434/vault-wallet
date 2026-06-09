@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ShieldCheck, Loader2, ArrowRight, Lock } from "lucide-react";
+import AuthFooter from "@/components/AuthFooter";
 
 export default function Login() {
   const [, navigate] = useLocation();
@@ -144,6 +145,8 @@ export default function Login() {
               Create one
             </button>
           </p>
+
+          <AuthFooter />
         </div>
       </div>
     </div>

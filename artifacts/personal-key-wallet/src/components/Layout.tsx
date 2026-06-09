@@ -142,6 +142,21 @@ export default function Layout({ children }: LayoutProps) {
           ))}
         </nav>
 
+        {/* Made in Nepal strip */}
+        <div className="px-4 py-2.5 text-center" style={{ borderTop: "1px solid hsl(var(--border))" }}>
+          <div className="flex items-center justify-center gap-1 text-[10.5px] text-muted-foreground/70 mb-0.5">
+            <span>🇳🇵</span>
+            <span className="font-semibold">Made in Nepal</span>
+            <span className="text-muted-foreground/40 mx-0.5">·</span>
+            <span>Aakash Adhikari</span>
+          </div>
+          <div className="flex items-center justify-center gap-2 text-[10px]">
+            <Link href="/privacy" className="text-muted-foreground/60 hover:text-primary transition-colors">Privacy</Link>
+            <span className="text-muted-foreground/30">·</span>
+            <Link href="/terms" className="text-muted-foreground/60 hover:text-primary transition-colors">Terms</Link>
+          </div>
+        </div>
+
         {/* User panel */}
         <div className="p-3" style={{ borderTop: "1px solid hsl(var(--border))" }}>
           <DropdownMenu>
