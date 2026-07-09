@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "LRk8lJSPLB4G6dDV56B-k"
+uri = "file://personal-key-wallet.zip"
+type = "unspecified"
+title = "Personal Key Wallet — Full Project Source"

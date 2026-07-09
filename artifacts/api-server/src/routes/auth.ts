@@ -5,16 +5,15 @@ const bcrypt = require("bcryptjs") as typeof import("bcryptjs");
 const jwt = require("jsonwebtoken") as typeof import("jsonwebtoken");
 const QRCode = require("qrcode") as typeof import("qrcode");
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-// otplib v13 — no authenticator sub-object; use top-level functions directly
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const _otplib = require("otplib") as any;
 const otpGenerateSecret: () => string = _otplib.generateSecret;
 const otpGenerateURI: (opts: Record<string, unknown>) => string = _otplib.generateURI;
 const otpVerify: (opts: { token: string; secret: string }) => boolean = _otplib.verify;
-import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, usersTable, sessionsTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { encryptField, decryptField } from "../lib/crypto.js";
+import { randomUUID } from "node:crypto";
 
 const router = Router();
 
@@ -48,16 +47,37 @@ function signTemp(payload: object) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: TEMP_TOKEN_EXPIRY });
 }
 
-function signSession(payload: object) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: SESSION_EXPIRY });
+function signSession(userId: number, tokenId: string) {
+  return jwt.sign({ userId, type: "session", jti: tokenId }, JWT_SECRET, { expiresIn: SESSION_EXPIRY });
 }
 
-export function verifyToken(token: string): { userId: number; type: string } | null {
+export function verifyToken(token: string): { userId: number; type: string; jti?: string } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: number; type: string };
+    return jwt.verify(token, JWT_SECRET) as { userId: number; type: string; jti?: string };
   } catch {
     return null;
   }
+}
+
+function parseDevice(userAgent?: string): string {
+  if (!userAgent) return "Unknown device";
+  const ua = userAgent.toLowerCase();
+  let device = "Desktop";
+  if (ua.includes("iphone")) device = "iPhone";
+  else if (ua.includes("ipad")) device = "iPad";
+  else if (ua.includes("android") && ua.includes("mobile")) device = "Android Phone";
+  else if (ua.includes("android")) device = "Android Tablet";
+  let browser = "Browser";
+  if (ua.includes("chrome") && !ua.includes("edg") && !ua.includes("opr")) browser = "Chrome";
+  else if (ua.includes("firefox")) browser = "Firefox";
+  else if (ua.includes("safari") && !ua.includes("chrome")) browser = "Safari";
+  else if (ua.includes("edg")) browser = "Edge";
+  else if (ua.includes("opr") || ua.includes("opera")) browser = "Opera";
+  let os = "";
+  if (ua.includes("windows")) os = "Windows";
+  else if (ua.includes("mac os") && !ua.includes("iphone") && !ua.includes("ipad")) os = "macOS";
+  else if (ua.includes("linux") && !ua.includes("android")) os = "Linux";
+  return os ? `${browser} on ${device === "Desktop" ? os : device}` : `${browser} on ${device}`;
 }
 
 router.post("/auth/signup", async (req, res) => {
@@ -119,7 +139,15 @@ router.post("/auth/verify-setup", async (req, res) => {
 
   await db.update(usersTable).set({ totpEnabled: true }).where(eq(usersTable.id, user.id));
 
-  const sessionToken = signSession({ userId: user.id, type: "session" });
+  const tokenId = randomUUID();
+  const sessionToken = signSession(user.id, tokenId);
+
+  await db.insert(sessionsTable).values({
+    userId: user.id,
+    tokenId,
+    userAgent: req.headers["user-agent"],
+    ip: (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown",
+  });
 
   return res.json({
     token: sessionToken,
@@ -179,7 +207,15 @@ router.post("/auth/verify", async (req, res) => {
     return res.status(400).json({ error: "Invalid 2FA code. Please check your authenticator app." });
   }
 
-  const sessionToken = signSession({ userId: user.id, type: "session" });
+  const tokenId = randomUUID();
+  const sessionToken = signSession(user.id, tokenId);
+
+  await db.insert(sessionsTable).values({
+    userId: user.id,
+    tokenId,
+    userAgent: req.headers["user-agent"],
+    ip: (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown",
+  });
 
   return res.json({
     token: sessionToken,
@@ -283,7 +319,93 @@ router.post("/auth/change-password", async (req, res) => {
   return res.json({ message: "Password changed successfully" });
 });
 
-router.post("/auth/logout", (_req, res) => {
+// GET /auth/sessions — list active sessions for current user
+router.get("/auth/sessions", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+  const payload = verifyToken(token);
+  if (!payload || payload.type !== "session") return res.status(401).json({ error: "Unauthorized" });
+
+  const sessions = await db
+    .select()
+    .from(sessionsTable)
+    .where(and(eq(sessionsTable.userId, payload.userId), eq(sessionsTable.isActive, true)));
+
+  const currentJti = payload.jti;
+
+  return res.json(
+    sessions
+      .sort((a, b) => b.lastSeenAt.getTime() - a.lastSeenAt.getTime())
+      .map((s) => ({
+        id: s.id,
+        device: parseDevice(s.userAgent || undefined),
+        ip: s.ip,
+        createdAt: s.createdAt.toISOString(),
+        lastSeenAt: s.lastSeenAt.toISOString(),
+        isCurrent: s.tokenId === currentJti,
+      }))
+  );
+});
+
+// DELETE /auth/sessions/:id — revoke a specific session
+router.delete("/auth/sessions/:id", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+  const payload = verifyToken(token);
+  if (!payload || payload.type !== "session") return res.status(401).json({ error: "Unauthorized" });
+
+  const sessionId = Number(req.params.id);
+  if (isNaN(sessionId)) return res.status(400).json({ error: "Invalid session id" });
+
+  await db
+    .update(sessionsTable)
+    .set({ isActive: false })
+    .where(and(eq(sessionsTable.id, sessionId), eq(sessionsTable.userId, payload.userId)));
+
+  return res.status(204).send();
+});
+
+// DELETE /auth/sessions — logout all OTHER sessions (keep current)
+router.delete("/auth/sessions", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+  const payload = verifyToken(token);
+  if (!payload || payload.type !== "session") return res.status(401).json({ error: "Unauthorized" });
+
+  const sessions = await db
+    .select()
+    .from(sessionsTable)
+    .where(and(eq(sessionsTable.userId, payload.userId), eq(sessionsTable.isActive, true)));
+
+  const othersIds = sessions
+    .filter((s) => s.tokenId !== payload.jti)
+    .map((s) => s.id);
+
+  for (const id of othersIds) {
+    await db.update(sessionsTable).set({ isActive: false }).where(eq(sessionsTable.id, id));
+  }
+
+  return res.status(204).send();
+});
+
+router.post("/auth/logout", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (token) {
+    const payload = verifyToken(token);
+    if (payload?.jti) {
+      await db
+        .update(sessionsTable)
+        .set({ isActive: false })
+        .where(eq(sessionsTable.tokenId, payload.jti));
+    }
+  }
   return res.status(204).send();
 });
 

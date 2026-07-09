@@ -139,6 +139,28 @@ export const ChangePasswordBody = zod.object({
 
 
 /**
+ * @summary List active sessions for current user
+ */
+export const ListSessionsResponseItem = zod.object({
+  "id": zod.number(),
+  "device": zod.string(),
+  "ip": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "lastSeenAt": zod.string(),
+  "isCurrent": zod.boolean()
+})
+export const ListSessionsResponse = zod.array(ListSessionsResponseItem)
+
+
+/**
+ * @summary Revoke a specific session
+ */
+export const RevokeSessionParams = zod.object({
+  "sessionId": zod.coerce.number()
+})
+
+
+/**
  * @summary Get current user CV profile
  */
 export const GetCvResponse = zod.object({

@@ -216,6 +216,16 @@ export interface Alert {
   createdAt: string;
 }
 
+export interface SessionEntry {
+  id: number;
+  device: string;
+  /** @nullable */
+  ip?: string | null;
+  createdAt: string;
+  lastSeenAt: string;
+  isCurrent: boolean;
+}
+
 export interface AuthSignupBody {
   email: string;
   /** @minLength 8 */

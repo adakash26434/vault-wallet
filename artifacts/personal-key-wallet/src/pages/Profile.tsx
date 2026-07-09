@@ -1,17 +1,28 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUpdateProfile, useChangePassword } from "@workspace/api-client-react";
+import {
+  useUpdateProfile, useChangePassword,
+  useListSessions, useRevokeSession, useLogoutOtherSessions,
+  getListSessionsQueryKey,
+} from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   User, Mail, Phone, Calendar, MapPin, Edit3, Save, X, Lock,
   ShieldCheck, KeyRound, FileText, Wallet, Eye, EyeOff,
+  Monitor, Smartphone, Globe, LogOut, Trash2, AlertCircle,
 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const AVATAR_COLORS = [
   "#0078D4", "#107C10", "#C50F1F", "#7719AA", "#038387",
@@ -35,9 +46,30 @@ function AvatarDisplay({ name, email, color, size = "lg" }: { name?: string | nu
   );
 }
 
+function DeviceIcon({ device }: { device: string }) {
+  const d = device.toLowerCase();
+  if (d.includes("iphone") || d.includes("android phone")) return <Smartphone className="h-5 w-5" />;
+  if (d.includes("ipad") || d.includes("tablet")) return <Monitor className="h-5 w-5" />;
+  return <Monitor className="h-5 w-5" />;
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 30) return `${days} days ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
 export default function Profile() {
   const { user, login, token } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
@@ -52,9 +84,14 @@ export default function Profile() {
   const [pwForm, setPwForm] = useState({ currentPassword: "", newPassword: "", confirm: "" });
   const [showPw, setShowPw] = useState(false);
   const [changingPw, setChangingPw] = useState(false);
+  const [logoutAllConfirm, setLogoutAllConfirm] = useState(false);
 
   const updateProfile = useUpdateProfile();
   const changePassword = useChangePassword();
+  const revokeMutation = useRevokeSession();
+  const logoutOthersMutation = useLogoutOtherSessions();
+
+  const { data: sessions, isLoading: sessionsLoading } = useListSessions();
 
   function handleEdit() {
     setForm({
@@ -73,9 +110,7 @@ export default function Profile() {
       { data: { ...form, dateOfBirth: form.dateOfBirth || undefined } },
       {
         onSuccess: (updated) => {
-          if (token) {
-            login(token, { ...user!, ...updated });
-          }
+          if (token) login(token, { ...user!, ...updated });
           setEditing(false);
           toast({ title: "Profile updated", description: "Your details have been saved." });
         },
@@ -107,8 +142,31 @@ export default function Profile() {
     );
   }
 
-  const memberSince = user ? new Date(0) : null;
-  const joinYear = 2024;
+  function handleRevokeSession(id: number) {
+    revokeMutation.mutate(
+      { sessionId: id },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListSessionsQueryKey() });
+          toast({ title: "Session removed", description: "That device has been logged out." });
+        },
+        onError: () => toast({ title: "Failed to remove session", variant: "destructive" }),
+      }
+    );
+  }
+
+  function handleLogoutOthers() {
+    logoutOthersMutation.mutate(undefined, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListSessionsQueryKey() });
+        setLogoutAllConfirm(false);
+        toast({ title: "All other sessions removed", description: "Only your current session remains active." });
+      },
+      onError: () => toast({ title: "Failed", variant: "destructive" }),
+    });
+  }
+
+  const otherSessions = sessions?.filter((s) => !s.isCurrent) ?? [];
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -135,9 +193,6 @@ export default function Profile() {
                       <ShieldCheck className="h-3 w-3 mr-1" />
                       2FA Active
                     </Badge>
-                    <Badge className="bg-primary/10 text-primary text-[10.5px]">
-                      Member since {joinYear}
-                    </Badge>
                   </div>
                 </div>
                 {!editing ? (
@@ -161,7 +216,6 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Avatar color picker — only while editing */}
           {editing && (
             <div className="mt-5 pt-4 border-t border-border/60">
               <Label className="text-[12.5px] font-semibold mb-2 block">Avatar Color</Label>
@@ -331,6 +385,90 @@ export default function Profile() {
         </CardContent>
       </Card>
 
+      {/* Active Sessions */}
+      <Card className="bg-white border-border" style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.08)" }}>
+        <CardHeader className="pb-3 pt-5 px-5">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                <Globe className="h-4 w-4 text-slate-600" />
+              </div>
+              <div>
+                <CardTitle className="text-[15px] font-bold">Active Sessions</CardTitle>
+                <p className="text-[11.5px] text-muted-foreground mt-0.5">Devices currently logged in to your account</p>
+              </div>
+            </div>
+            {otherSessions.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-[12.5px] text-destructive border-destructive/30 hover:bg-destructive/5"
+                onClick={() => setLogoutAllConfirm(true)}
+                disabled={logoutOthersMutation.isPending}
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Logout all other devices
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="px-5 pb-5">
+          {sessionsLoading ? (
+            <div className="space-y-3">
+              {[1, 2].map((i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+            </div>
+          ) : !sessions || sessions.length === 0 ? (
+            <div className="flex items-center gap-3 py-4 px-4 bg-muted/30 rounded-xl">
+              <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0" />
+              <p className="text-[13px] text-muted-foreground">No active sessions found. This may update after your next login.</p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {sessions.map((s) => (
+                <div
+                  key={s.id}
+                  className={`flex items-center gap-4 px-4 py-3 rounded-xl border transition-all ${
+                    s.isCurrent
+                      ? "bg-emerald-50 border-emerald-200"
+                      : "bg-muted/20 border-border hover:border-border/80"
+                  }`}
+                >
+                  <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${s.isCurrent ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                    <DeviceIcon device={s.device} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-[13px] font-semibold text-foreground truncate">{s.device}</p>
+                      {s.isCurrent && (
+                        <Badge className="bg-emerald-100 text-emerald-700 text-[10px] border-emerald-200">
+                          This device
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-[11.5px] text-muted-foreground mt-0.5">
+                      {s.ip && s.ip !== "unknown" ? `${s.ip} · ` : ""}
+                      Last active {timeAgo(s.lastSeenAt)} · Signed in {timeAgo(s.createdAt)}
+                    </p>
+                  </div>
+                  {!s.isCurrent && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                      onClick={() => handleRevokeSession(s.id)}
+                      disabled={revokeMutation.isPending}
+                      title="Force logout this device"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Quick stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
@@ -351,6 +489,27 @@ export default function Profile() {
           </Card>
         ))}
       </div>
+
+      {/* Logout all others confirm */}
+      <AlertDialog open={logoutAllConfirm} onOpenChange={setLogoutAllConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Logout all other devices?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will immediately revoke access from all other devices. Only your current session will remain active.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLogoutOthers}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Logout all others
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

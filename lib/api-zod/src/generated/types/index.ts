@@ -47,3 +47,4 @@ export * from './passwordInput';
 export * from './passwordStats';
 export * from './passwordUpdate';
 export * from './profileUpdateBody';
+export * from './sessionEntry';

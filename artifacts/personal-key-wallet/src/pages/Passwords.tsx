@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   KeyRound, Plus, Search, Copy, MoreVertical, Trash2, Edit,
-  Check, User, ShieldAlert, ShieldCheck, AlertTriangle, Filter, Users,
+  Check, User, ShieldAlert, ShieldCheck, AlertTriangle, Filter,
+  Users, Clock, AlertCircle,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -60,6 +61,30 @@ const FAMILY_MEMBERS = [
 
 const OWNER_EMOJI: Record<string, string> = Object.fromEntries(FAMILY_MEMBERS.map(m => [m.label, m.emoji]));
 const OWNER_INACTIVE: Record<string, string> = Object.fromEntries(FAMILY_MEMBERS.map(m => [m.label, m.inactive]));
+
+const STALE_DAYS = 90;
+const OLD_DAYS = 180;
+
+function passwordAgeDays(updatedAt: string): number {
+  return Math.floor((Date.now() - new Date(updatedAt).getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function AgeWarning({ days }: { days: number }) {
+  if (days < STALE_DAYS) return null;
+  const isOld = days >= OLD_DAYS;
+  const months = Math.floor(days / 30);
+  return (
+    <span className={cn(
+      "hidden sm:inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border",
+      isOld
+        ? "bg-red-50 text-red-600 border-red-200"
+        : "bg-amber-50 text-amber-700 border-amber-200"
+    )}>
+      <Clock className="h-2.5 w-2.5" />
+      {months}m old
+    </span>
+  );
+}
 
 function StrengthBadge({ strength }: { strength?: string }) {
   if (strength === "strong")
@@ -112,7 +137,18 @@ export default function Passwords() {
   const { data: stats } = useGetPasswordStats();
   const deleteMutation = useDeletePassword();
 
-  // Collect unique owners present in vault
+  // Stale password counts
+  const staleCounts = React.useMemo(() => {
+    if (!passwords) return { stale: 0, old: 0 };
+    let stale = 0, old = 0;
+    passwords.forEach((p) => {
+      const days = passwordAgeDays(p.updatedAt);
+      if (days >= OLD_DAYS) old++;
+      else if (days >= STALE_DAYS) stale++;
+    });
+    return { stale, old };
+  }, [passwords]);
+
   const presentOwners = React.useMemo(() => {
     if (!passwords) return [];
     const seen = new Set<string>();
@@ -120,7 +156,6 @@ export default function Passwords() {
     return FAMILY_MEMBERS.filter((m) => seen.has(m.label));
   }, [passwords]);
 
-  // Client-side dual filter: category + owner
   const filtered = React.useMemo(() => {
     if (!passwords) return [];
     return passwords.filter((p) => {
@@ -185,6 +220,8 @@ export default function Passwords() {
     );
   };
 
+  const totalStale = staleCounts.stale + staleCounts.old;
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -201,6 +238,28 @@ export default function Passwords() {
         </PasswordFormDialog>
       </div>
 
+      {/* Stale password alert */}
+      {totalStale > 0 && (
+        <div className={cn(
+          "flex items-start gap-3 px-4 py-3 rounded-xl border",
+          staleCounts.old > 0
+            ? "bg-red-50 border-red-200"
+            : "bg-amber-50 border-amber-200"
+        )}>
+          <AlertCircle className={cn("h-4 w-4 mt-0.5 shrink-0", staleCounts.old > 0 ? "text-red-500" : "text-amber-600")} />
+          <div className="min-w-0">
+            <p className={cn("text-[13px] font-semibold", staleCounts.old > 0 ? "text-red-700" : "text-amber-800")}>
+              {staleCounts.old > 0
+                ? `${staleCounts.old} password${staleCounts.old > 1 ? "s" : ""} not changed in 6+ months — update recommended`
+                : `${staleCounts.stale} password${staleCounts.stale > 1 ? "s" : ""} not changed in 3+ months`}
+            </p>
+            <p className={cn("text-[11.5px] mt-0.5", staleCounts.old > 0 ? "text-red-600" : "text-amber-700")}>
+              Regular password changes keep your accounts secure. Look for the <Clock className="inline h-3 w-3" /> age badge on cards below.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -211,7 +270,7 @@ export default function Passwords() {
         </div>
       )}
 
-      {/* Family member filter — only show if >1 owner present */}
+      {/* Family member filter */}
       {presentOwners.length > 1 && (
         <div className="bg-white border border-border rounded-xl p-3.5" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
           <div className="flex items-center gap-2 mb-2.5">
@@ -229,10 +288,7 @@ export default function Passwords() {
               )}
             >
               👥 Everyone
-              <span className={cn(
-                "text-[10.5px] rounded-full px-1.5 leading-5 font-bold",
-                selectedOwner === "All" ? "bg-white/20" : "bg-muted"
-              )}>
+              <span className={cn("text-[10.5px] rounded-full px-1.5 leading-5 font-bold", selectedOwner === "All" ? "bg-white/20" : "bg-muted")}>
                 {passwords?.length ?? 0}
               </span>
             </button>
@@ -249,10 +305,7 @@ export default function Passwords() {
                   )}
                 >
                   {m.emoji} {m.label}
-                  <span className={cn(
-                    "text-[10.5px] rounded-full px-1.5 leading-5 font-bold",
-                    isActive ? "bg-white/25" : "bg-white/70"
-                  )}>
+                  <span className={cn("text-[10.5px] rounded-full px-1.5 leading-5 font-bold", isActive ? "bg-white/25" : "bg-white/70")}>
                     {count}
                   </span>
                 </button>
@@ -262,7 +315,7 @@ export default function Passwords() {
         </div>
       )}
 
-      {/* Search + category filter row */}
+      {/* Search + category filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -273,7 +326,6 @@ export default function Passwords() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
           <Filter className="h-3.5 w-3.5 text-muted-foreground shrink-0 ml-1" />
           {CATEGORIES.map((cat) => {
@@ -295,10 +347,7 @@ export default function Passwords() {
               >
                 {cat}
                 {count > 0 && (
-                  <span className={cn(
-                    "text-[10.5px] rounded-full px-1.5 py-0.5 leading-none font-bold",
-                    isActive ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
-                  )}>
+                  <span className={cn("text-[10.5px] rounded-full px-1.5 py-0.5 leading-none font-bold", isActive ? "bg-white/20 text-white" : "bg-muted text-muted-foreground")}>
                     {count}
                   </span>
                 )}
@@ -345,14 +394,18 @@ export default function Passwords() {
             const ownerEmoji = OWNER_EMOJI[ownerVal] || "👤";
             const ownerStyle = OWNER_INACTIVE[ownerVal] || "bg-slate-100 text-slate-600 border-slate-200";
             const isMyOwn = ownerVal === "Me";
+            const ageDays = passwordAgeDays(pwd.updatedAt);
             return (
               <Card
                 key={pwd.id}
-                className="bg-white border-border hover:border-primary/30 transition-all"
+                className={cn(
+                  "bg-white border-border hover:border-primary/30 transition-all",
+                  ageDays >= OLD_DAYS && "border-l-2 border-l-red-400",
+                  ageDays >= STALE_DAYS && ageDays < OLD_DAYS && "border-l-2 border-l-amber-400"
+                )}
                 style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
               >
                 <CardContent className="p-4 flex items-center justify-between gap-4">
-                  {/* Left — favicon + details */}
                   <div className="flex items-center gap-3.5 overflow-hidden flex-1 min-w-0">
                     <div className="relative h-10 w-10 flex-shrink-0">
                       {pwd.url ? (
@@ -382,13 +435,11 @@ export default function Passwords() {
                           {pwd.category}
                         </span>
                         {!isMyOwn && (
-                          <span className={cn(
-                            "hidden sm:inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border",
-                            ownerStyle
-                          )}>
+                          <span className={cn("hidden sm:inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border", ownerStyle)}>
                             {ownerEmoji} {ownerVal}
                           </span>
                         )}
+                        <AgeWarning days={ageDays} />
                       </div>
                       <p className="text-[12.5px] text-muted-foreground truncate">{pwd.username}</p>
                       {pwd.url && (
@@ -398,16 +449,13 @@ export default function Passwords() {
                       )}
                     </div>
                   </div>
-
-                  {/* Right — badge + actions */}
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="hidden sm:block">
                       <StrengthBadge strength={pwd.strength} />
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Button
-                        variant="ghost"
-                        size="icon"
+                        variant="ghost" size="icon"
                         className={`h-8 w-8 ${copiedUsernameId === pwd.id ? "text-emerald-600 bg-emerald-100" : "text-muted-foreground"}`}
                         onClick={() => handleCopyUsername(pwd.username ?? "", pwd.id)}
                         title="Copy username"
@@ -415,8 +463,7 @@ export default function Passwords() {
                         {copiedUsernameId === pwd.id ? <Check className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
                       </Button>
                       <Button
-                        variant="ghost"
-                        size="icon"
+                        variant="ghost" size="icon"
                         className={`h-8 w-8 ${copiedId === pwd.id ? "text-emerald-600 bg-emerald-100" : "text-muted-foreground"}`}
                         onClick={() => handleCopy(pwd.password, pwd.id)}
                         title="Copy password (auto-clears in 30s)"
@@ -450,7 +497,6 @@ export default function Passwords() {
         )}
       </div>
 
-      {/* Results count */}
       {filtered.length > 0 && (passwords?.length ?? 0) > 0 && (
         <p className="text-center text-[12px] text-muted-foreground pb-2">
           Showing {filtered.length} of {passwords?.length} passwords
@@ -459,7 +505,6 @@ export default function Passwords() {
         </p>
       )}
 
-      {/* Delete confirmation dialog */}
       <AlertDialog open={deletingId != null} onOpenChange={(o) => !o && setDeletingId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
