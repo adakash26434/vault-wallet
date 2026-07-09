@@ -239,7 +239,7 @@ router.get("/auth/me", async (req, res) => {
   return res.json({
     id: user.id, email: user.email, name: user.name, totpEnabled: user.totpEnabled,
     phone: user.phone, dateOfBirth: user.dateOfBirth, bio: user.bio,
-    address: user.address, avatarColor: user.avatarColor,
+    address: user.address, avatarColor: user.avatarColor, avatarUrl: user.avatarUrl,
   });
 });
 
@@ -250,6 +250,7 @@ const ProfileUpdateBody = z.object({
   bio: z.string().optional(),
   address: z.string().optional(),
   avatarColor: z.string().optional(),
+  avatarUrl: z.string().optional(),
 });
 
 router.patch("/auth/profile", async (req, res) => {
@@ -274,6 +275,7 @@ router.patch("/auth/profile", async (req, res) => {
   if (parsed.data.bio !== undefined) updateData.bio = parsed.data.bio;
   if (parsed.data.address !== undefined) updateData.address = parsed.data.address;
   if (parsed.data.avatarColor !== undefined) updateData.avatarColor = parsed.data.avatarColor;
+  if (parsed.data.avatarUrl !== undefined) updateData.avatarUrl = parsed.data.avatarUrl;
 
   const [updated] = await db.update(usersTable).set(updateData).where(eq(usersTable.id, payload.userId)).returning();
   if (!updated) return res.status(404).json({ error: "User not found" });
@@ -281,7 +283,7 @@ router.patch("/auth/profile", async (req, res) => {
   return res.json({
     id: updated.id, email: updated.email, name: updated.name, totpEnabled: updated.totpEnabled,
     phone: updated.phone, dateOfBirth: updated.dateOfBirth, bio: updated.bio,
-    address: updated.address, avatarColor: updated.avatarColor,
+    address: updated.address, avatarColor: updated.avatarColor, avatarUrl: updated.avatarUrl,
   });
 });
 

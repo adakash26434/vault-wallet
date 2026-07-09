@@ -20,6 +20,8 @@ tags:
     description: Finance tracker operations
   - name: dashboard
     description: Dashboard and insights
+  - name: tasks
+    description: Tasks and reminders
 paths:
   /auth/signup:
     post:

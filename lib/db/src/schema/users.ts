@@ -11,6 +11,7 @@ export const usersTable = pgTable("users", {
   dateOfBirth: date("date_of_birth"),
   bio: text("bio"),
   avatarColor: text("avatar_color"),
+  avatarUrl: text("avatar_url"),
   address: text("address"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

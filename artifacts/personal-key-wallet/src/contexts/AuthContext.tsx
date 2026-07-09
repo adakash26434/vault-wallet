@@ -11,6 +11,7 @@ export interface AuthUser {
   bio?: string | null;
   address?: string | null;
   avatarColor?: string | null;
+  avatarUrl?: string | null;
 }
 
 interface AuthState {

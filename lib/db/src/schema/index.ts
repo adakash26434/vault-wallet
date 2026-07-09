@@ -4,3 +4,4 @@ export * from "./documents";
 export * from "./finance";
 export * from "./cv";
 export * from "./sessions";
+export * from "./tasks";

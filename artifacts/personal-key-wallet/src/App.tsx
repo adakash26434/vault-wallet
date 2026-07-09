@@ -13,6 +13,7 @@ import Insights from "@/pages/Insights";
 import Extension from "@/pages/Extension";
 import Profile from "@/pages/Profile";
 import CVBuilder from "@/pages/CVBuilder";
+import Tasks from "@/pages/Tasks";
 import Login from "@/pages/auth/Login";
 import Signup from "@/pages/auth/Signup";
 import SetupTwoFactor from "@/pages/auth/SetupTwoFactor";

@@ -7,6 +7,7 @@ import financeRouter from "./finance";
 import dashboardRouter from "./dashboard";
 import extensionRouter from "./extension";
 import cvRouter from "./cv";
+import tasksRouter from "./tasks";
 import { requireAuth } from "../middlewares/auth.js";
 
 const router: IRouter = Router();
@@ -24,5 +25,6 @@ router.use(financeRouter);
 router.use(dashboardRouter);
 router.use(extensionRouter);
 router.use(cvRouter);
+router.use(tasksRouter);
 
 export default router;
