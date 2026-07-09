@@ -14,4 +14,5 @@ export interface PasswordUpdate {
   url?: string;
   category?: string;
   notes?: string;
+  owner?: string;
 }

@@ -591,7 +591,7 @@ components:
 
     PasswordEntry:
       type: object
-      required: [id, title, username, password, category, createdAt, updatedAt]
+      required: [id, title, username, password, category, owner, createdAt, updatedAt]
       properties:
         id:
           type: integer
@@ -610,6 +610,9 @@ components:
         strength:
           type: string
           enum: [weak, medium, strong]
+        owner:
+          type: string
+          default: "Me"
         createdAt:
           type: string
         updatedAt:
@@ -633,6 +636,9 @@ components:
           type: string
         notes:
           type: string
+        owner:
+          type: string
+          default: "Me"
 
     PasswordUpdate:
       type: object
@@ -649,6 +655,8 @@ components:
         category:
           type: string
         notes:
+          type: string
+        owner:
           type: string
 
     PasswordStats:

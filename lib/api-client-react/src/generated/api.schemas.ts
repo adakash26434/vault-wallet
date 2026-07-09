@@ -29,6 +29,7 @@ export interface PasswordEntry {
   /** @nullable */
   notes?: string | null;
   strength?: PasswordEntryStrength;
+  owner: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -42,6 +43,7 @@ export interface PasswordInput {
   url?: string;
   category: string;
   notes?: string;
+  owner?: string;
 }
 
 export interface PasswordUpdate {
@@ -52,6 +54,7 @@ export interface PasswordUpdate {
   url?: string;
   category?: string;
   notes?: string;
+  owner?: string;
 }
 
 export interface PasswordStats {

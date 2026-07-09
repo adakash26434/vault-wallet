@@ -15,4 +15,5 @@ export interface PasswordInput {
   url?: string;
   category: string;
   notes?: string;
+  owner?: string;
 }

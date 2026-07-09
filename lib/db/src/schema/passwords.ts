@@ -13,6 +13,7 @@ export const passwordsTable = pgTable("passwords", {
   category: text("category").notNull().default("General"),
   notes: text("notes"),
   strength: passwordStrengthEnum("strength").notNull().default("medium"),
+  owner: text("owner").notNull().default("Me"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   KeyRound, Plus, Search, Copy, MoreVertical, Trash2, Edit,
-  Check, User, ShieldAlert, ShieldCheck, AlertTriangle, Filter,
+  Check, User, ShieldAlert, ShieldCheck, AlertTriangle, Filter, Users,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -46,6 +46,21 @@ const CAT_COLORS: Record<string, string> = {
   Other:          "bg-slate-100 text-slate-600",
 };
 
+const FAMILY_MEMBERS = [
+  { label: "Me",       emoji: "🧑", active: "bg-blue-600 text-white border-blue-600",    inactive: "bg-blue-50 text-blue-700 border-blue-200" },
+  { label: "Wife",     emoji: "👩", active: "bg-pink-500 text-white border-pink-500",    inactive: "bg-pink-50 text-pink-700 border-pink-200" },
+  { label: "Husband",  emoji: "👨", active: "bg-indigo-600 text-white border-indigo-600", inactive: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+  { label: "Dad",      emoji: "👴", active: "bg-amber-500 text-white border-amber-500",  inactive: "bg-amber-50 text-amber-700 border-amber-200" },
+  { label: "Mom",      emoji: "👵", active: "bg-orange-500 text-white border-orange-500", inactive: "bg-orange-50 text-orange-700 border-orange-200" },
+  { label: "Son",      emoji: "👦", active: "bg-teal-600 text-white border-teal-600",    inactive: "bg-teal-50 text-teal-700 border-teal-200" },
+  { label: "Daughter", emoji: "👧", active: "bg-rose-500 text-white border-rose-500",    inactive: "bg-rose-50 text-rose-700 border-rose-200" },
+  { label: "Brother",  emoji: "🧒", active: "bg-violet-600 text-white border-violet-600", inactive: "bg-violet-50 text-violet-700 border-violet-200" },
+  { label: "Sister",   emoji: "👩‍🦱", active: "bg-fuchsia-500 text-white border-fuchsia-500", inactive: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200" },
+];
+
+const OWNER_EMOJI: Record<string, string> = Object.fromEntries(FAMILY_MEMBERS.map(m => [m.label, m.emoji]));
+const OWNER_INACTIVE: Record<string, string> = Object.fromEntries(FAMILY_MEMBERS.map(m => [m.label, m.inactive]));
+
 function StrengthBadge({ strength }: { strength?: string }) {
   if (strength === "strong")
     return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">Strong</Badge>;
@@ -74,12 +89,12 @@ export default function Passwords() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedOwner, setSelectedOwner] = useState("All");
   const [editingPassword, setEditingPassword] = useState<PasswordEntry | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [copiedUsernameId, setCopiedUsernameId] = useState<number | null>(null);
 
-  // Ref to cancel the 30s clipboard auto-clear timer when a new copy happens
   const clipboardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const queryClient = useQueryClient();
@@ -97,34 +112,48 @@ export default function Passwords() {
   const { data: stats } = useGetPasswordStats();
   const deleteMutation = useDeletePassword();
 
-  // Client-side category filter
+  // Collect unique owners present in vault
+  const presentOwners = React.useMemo(() => {
+    if (!passwords) return [];
+    const seen = new Set<string>();
+    passwords.forEach((p) => seen.add((p as any).owner || "Me"));
+    return FAMILY_MEMBERS.filter((m) => seen.has(m.label));
+  }, [passwords]);
+
+  // Client-side dual filter: category + owner
   const filtered = React.useMemo(() => {
     if (!passwords) return [];
-    if (selectedCategory === "All") return passwords;
-    return passwords.filter((p) => p.category === selectedCategory);
-  }, [passwords, selectedCategory]);
+    return passwords.filter((p) => {
+      const ownerMatch = selectedOwner === "All" || (p as any).owner === selectedOwner;
+      const catMatch = selectedCategory === "All" || p.category === selectedCategory;
+      return ownerMatch && catMatch;
+    });
+  }, [passwords, selectedCategory, selectedOwner]);
 
-  // Category counts for badge display
   const categoryCounts = React.useMemo(() => {
     if (!passwords) return {};
-    return passwords.reduce<Record<string, number>>((acc, p) => {
+    const source = selectedOwner === "All" ? passwords : passwords.filter(p => (p as any).owner === selectedOwner);
+    return source.reduce<Record<string, number>>((acc, p) => {
       acc[p.category] = (acc[p.category] ?? 0) + 1;
+      return acc;
+    }, {});
+  }, [passwords, selectedOwner]);
+
+  const ownerCounts = React.useMemo(() => {
+    if (!passwords) return {};
+    return passwords.reduce<Record<string, number>>((acc, p) => {
+      const o = (p as any).owner || "Me";
+      acc[o] = (acc[o] ?? 0) + 1;
       return acc;
     }, {});
   }, [passwords]);
 
   const handleCopy = (password: string, id: number) => {
-    // Cancel any pending 30-second clear
     if (clipboardTimerRef.current) clearTimeout(clipboardTimerRef.current);
-
     navigator.clipboard.writeText(password);
     setCopiedId(id);
     toast({ title: "Password copied", description: "Auto-cleared from clipboard in 30s", duration: 2000 });
-
-    // Reset visual state after 2s
     setTimeout(() => setCopiedId(null), 2000);
-
-    // SECURITY: actually clear the clipboard after 30 seconds
     clipboardTimerRef.current = setTimeout(() => {
       navigator.clipboard.writeText("").catch(() => {});
     }, 30000);
@@ -157,7 +186,7 @@ export default function Passwords() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -182,7 +211,58 @@ export default function Passwords() {
         </div>
       )}
 
-      {/* Search + filter row */}
+      {/* Family member filter — only show if >1 owner present */}
+      {presentOwners.length > 1 && (
+        <div className="bg-white border border-border rounded-xl p-3.5" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+          <div className="flex items-center gap-2 mb-2.5">
+            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">Filter by person</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedOwner("All")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold border transition-all",
+                selectedOwner === "All"
+                  ? "bg-foreground text-background border-foreground shadow-sm"
+                  : "bg-muted/40 text-muted-foreground border-border hover:border-primary/30"
+              )}
+            >
+              👥 Everyone
+              <span className={cn(
+                "text-[10.5px] rounded-full px-1.5 leading-5 font-bold",
+                selectedOwner === "All" ? "bg-white/20" : "bg-muted"
+              )}>
+                {passwords?.length ?? 0}
+              </span>
+            </button>
+            {presentOwners.map((m) => {
+              const count = ownerCounts[m.label] ?? 0;
+              const isActive = selectedOwner === m.label;
+              return (
+                <button
+                  key={m.label}
+                  onClick={() => setSelectedOwner(m.label)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold border transition-all",
+                    isActive ? m.active : `${m.inactive} hover:border-current`
+                  )}
+                >
+                  {m.emoji} {m.label}
+                  <span className={cn(
+                    "text-[10.5px] rounded-full px-1.5 leading-5 font-bold",
+                    isActive ? "bg-white/25" : "bg-white/70"
+                  )}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Search + category filter row */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -194,11 +274,12 @@ export default function Passwords() {
           />
         </div>
 
-        {/* Category filter tabs — horizontal scroll */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
           <Filter className="h-3.5 w-3.5 text-muted-foreground shrink-0 ml-1" />
           {CATEGORIES.map((cat) => {
-            const count = cat === "All" ? (passwords?.length ?? 0) : (categoryCounts[cat] ?? 0);
+            const count = cat === "All"
+              ? (selectedOwner === "All" ? (passwords?.length ?? 0) : (ownerCounts[selectedOwner] ?? 0))
+              : (categoryCounts[cat] ?? 0);
             const isActive = selectedCategory === cat;
             if (cat !== "All" && count === 0) return null;
             return (
@@ -239,27 +320,31 @@ export default function Passwords() {
               <KeyRound className="h-8 w-8 text-blue-700" />
             </div>
             <h3 className="text-[16px] font-bold">
-              {search || selectedCategory !== "All" ? "No matches found" : "Vault is empty"}
+              {search || selectedCategory !== "All" || selectedOwner !== "All" ? "No matches found" : "Vault is empty"}
             </h3>
             <p className="text-[13px] text-muted-foreground mt-1 mb-5 max-w-xs">
-              {search || selectedCategory !== "All"
-                ? "Try a different search term or category filter."
+              {search || selectedCategory !== "All" || selectedOwner !== "All"
+                ? "Try a different search term or filter."
                 : "Add your first password and secure it with AES-256 encryption."}
             </p>
-            {!search && selectedCategory === "All" && (
+            {!search && selectedCategory === "All" && selectedOwner === "All" && (
               <PasswordFormDialog>
                 <Button variant="outline">Add your first password</Button>
               </PasswordFormDialog>
             )}
-            {selectedCategory !== "All" && (
-              <Button variant="ghost" onClick={() => setSelectedCategory("All")} className="text-[13px]">
-                Show all categories
+            {(selectedCategory !== "All" || selectedOwner !== "All") && (
+              <Button variant="ghost" onClick={() => { setSelectedCategory("All"); setSelectedOwner("All"); }} className="text-[13px]">
+                Show all passwords
               </Button>
             )}
           </div>
         ) : (
           filtered.map((pwd) => {
             const catStyle = CAT_COLORS[pwd.category] ?? "bg-slate-100 text-slate-600";
+            const ownerVal = (pwd as any).owner || "Me";
+            const ownerEmoji = OWNER_EMOJI[ownerVal] || "👤";
+            const ownerStyle = OWNER_INACTIVE[ownerVal] || "bg-slate-100 text-slate-600 border-slate-200";
+            const isMyOwn = ownerVal === "Me";
             return (
               <Card
                 key={pwd.id}
@@ -296,6 +381,14 @@ export default function Passwords() {
                         <span className={`hidden sm:inline-flex text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${catStyle}`}>
                           {pwd.category}
                         </span>
+                        {!isMyOwn && (
+                          <span className={cn(
+                            "hidden sm:inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border",
+                            ownerStyle
+                          )}>
+                            {ownerEmoji} {ownerVal}
+                          </span>
+                        )}
                       </div>
                       <p className="text-[12.5px] text-muted-foreground truncate">{pwd.username}</p>
                       {pwd.url && (
@@ -361,6 +454,7 @@ export default function Passwords() {
       {filtered.length > 0 && (passwords?.length ?? 0) > 0 && (
         <p className="text-center text-[12px] text-muted-foreground pb-2">
           Showing {filtered.length} of {passwords?.length} passwords
+          {selectedOwner !== "All" ? ` for ${selectedOwner}` : ""}
           {selectedCategory !== "All" ? ` in "${selectedCategory}"` : ""}
         </p>
       )}

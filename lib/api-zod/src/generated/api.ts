@@ -219,6 +219,8 @@ export const ListPasswordsQueryParams = zod.object({
   "category": zod.coerce.string().optional()
 })
 
+export const listPasswordsResponseOwnerDefault = `Me`;
+
 export const ListPasswordsResponseItem = zod.object({
   "id": zod.number(),
   "title": zod.string(),
@@ -228,6 +230,7 @@ export const ListPasswordsResponseItem = zod.object({
   "category": zod.string(),
   "notes": zod.string().nullish(),
   "strength": zod.enum(['weak', 'medium', 'strong']).optional(),
+  "owner": zod.string().default(listPasswordsResponseOwnerDefault),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -239,7 +242,7 @@ export const ListPasswordsResponse = zod.array(ListPasswordsResponseItem)
  */
 
 
-
+export const createPasswordBodyOwnerDefault = `Me`;
 
 export const CreatePasswordBody = zod.object({
   "title": zod.string().min(1),
@@ -247,7 +250,8 @@ export const CreatePasswordBody = zod.object({
   "password": zod.string().min(1),
   "url": zod.string().optional(),
   "category": zod.string(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "owner": zod.string().default(createPasswordBodyOwnerDefault)
 })
 
 
@@ -258,6 +262,8 @@ export const GetPasswordParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const getPasswordResponseOwnerDefault = `Me`;
+
 export const GetPasswordResponse = zod.object({
   "id": zod.number(),
   "title": zod.string(),
@@ -267,6 +273,7 @@ export const GetPasswordResponse = zod.object({
   "category": zod.string(),
   "notes": zod.string().nullish(),
   "strength": zod.enum(['weak', 'medium', 'strong']).optional(),
+  "owner": zod.string().default(getPasswordResponseOwnerDefault),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -288,8 +295,11 @@ export const UpdatePasswordBody = zod.object({
   "password": zod.string().optional(),
   "url": zod.string().optional(),
   "category": zod.string().optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "owner": zod.string().optional()
 })
+
+export const updatePasswordResponseOwnerDefault = `Me`;
 
 export const UpdatePasswordResponse = zod.object({
   "id": zod.number(),
@@ -300,6 +310,7 @@ export const UpdatePasswordResponse = zod.object({
   "category": zod.string(),
   "notes": zod.string().nullish(),
   "strength": zod.enum(['weak', 'medium', 'strong']).optional(),
+  "owner": zod.string().default(updatePasswordResponseOwnerDefault),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -332,6 +343,8 @@ export const MatchPasswordsByDomainQueryParams = zod.object({
   "domain": zod.coerce.string()
 })
 
+export const matchPasswordsByDomainResponseOwnerDefault = `Me`;
+
 export const MatchPasswordsByDomainResponseItem = zod.object({
   "id": zod.number(),
   "title": zod.string(),
@@ -341,6 +354,7 @@ export const MatchPasswordsByDomainResponseItem = zod.object({
   "category": zod.string(),
   "notes": zod.string().nullish(),
   "strength": zod.enum(['weak', 'medium', 'strong']).optional(),
+  "owner": zod.string().default(matchPasswordsByDomainResponseOwnerDefault),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })

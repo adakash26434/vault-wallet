@@ -43,7 +43,7 @@ router.get("/passwords", async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid query params" });
   }
-  const { search, category } = parsed.data;
+  const { search, category, owner } = parsed.data as { search?: string; category?: string; owner?: string };
 
   // Fetch rows — title is not encrypted so we can still DB-filter on it.
   // username/url are encrypted so we filter those in-app after decryption.
@@ -76,6 +76,9 @@ router.get("/passwords", async (req, res) => {
   if (category) {
     filtered = filtered.filter((r) => r.category === category);
   }
+  if (owner) {
+    filtered = filtered.filter((r) => r.owner === owner);
+  }
 
   return res.json(filtered);
 });
@@ -85,7 +88,7 @@ router.post("/passwords", async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid body" });
   }
-  const { title, username, password, url, category, notes } = parsed.data;
+  const { title, username, password, url, category, notes, owner } = parsed.data as any;
   const strength = computeStrength(password);
 
   const [row] = await db
@@ -98,6 +101,7 @@ router.post("/passwords", async (req, res) => {
       category: category ?? "General",
       notes: encryptField(notes) ?? undefined,
       strength,
+      owner: owner ?? "Me",
     })
     .returning();
 
@@ -177,14 +181,16 @@ router.patch("/passwords/:id", async (req, res) => {
   const updates: Record<string, unknown> = { updatedAt: new Date() };
   const data = bodyParsed.data;
 
-  if (data.title !== undefined) updates.title = data.title;
-  if (data.category !== undefined) updates.category = data.category;
-  if (data.username !== undefined) updates.username = encryptField(data.username);
-  if (data.url !== undefined) updates.url = encryptField(data.url);
-  if (data.notes !== undefined) updates.notes = encryptField(data.notes);
-  if (data.password !== undefined) {
-    updates.password = encryptField(data.password);
-    updates.strength = computeStrength(data.password);
+  const anyData = data as any;
+  if (anyData.title !== undefined) updates.title = anyData.title;
+  if (anyData.category !== undefined) updates.category = anyData.category;
+  if (anyData.username !== undefined) updates.username = encryptField(anyData.username);
+  if (anyData.url !== undefined) updates.url = encryptField(anyData.url);
+  if (anyData.notes !== undefined) updates.notes = encryptField(anyData.notes);
+  if (anyData.owner !== undefined) updates.owner = anyData.owner;
+  if (anyData.password !== undefined) {
+    updates.password = encryptField(anyData.password);
+    updates.strength = computeStrength(anyData.password);
   }
 
   const [row] = await db

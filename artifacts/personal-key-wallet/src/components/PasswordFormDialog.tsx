@@ -16,9 +16,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Eye, EyeOff, Loader2, RefreshCw, KeyRound, Globe,
-  User, Tag, StickyNote,
+  User, Tag, StickyNote, Users,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -27,6 +28,7 @@ const formSchema = z.object({
   url: z.string().optional(),
   category: z.string().min(1, "Category is required"),
   notes: z.string().optional(),
+  owner: z.string().min(1),
 });
 
 interface PasswordFormDialogProps {
@@ -39,6 +41,18 @@ interface PasswordFormDialogProps {
 const CATEGORIES = [
   "Email", "Social", "Banking", "Mobile Wallet", "Work",
   "Shopping", "Entertainment", "Government", "Personal", "Other",
+];
+
+const FAMILY_MEMBERS = [
+  { label: "Me",       emoji: "🧑", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  { label: "Wife",     emoji: "👩", color: "bg-pink-100 text-pink-700 border-pink-200" },
+  { label: "Husband",  emoji: "👨", color: "bg-indigo-100 text-indigo-700 border-indigo-200" },
+  { label: "Dad",      emoji: "👴", color: "bg-amber-100 text-amber-700 border-amber-200" },
+  { label: "Mom",      emoji: "👵", color: "bg-orange-100 text-orange-700 border-orange-200" },
+  { label: "Son",      emoji: "👦", color: "bg-teal-100 text-teal-700 border-teal-200" },
+  { label: "Daughter", emoji: "👧", color: "bg-rose-100 text-rose-700 border-rose-200" },
+  { label: "Brother",  emoji: "🧒", color: "bg-violet-100 text-violet-700 border-violet-200" },
+  { label: "Sister",   emoji: "👩‍🦱", color: "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200" },
 ];
 
 const DOMAIN_CATEGORY_MAP: Record<string, string> = {
@@ -143,11 +157,13 @@ export default function PasswordFormDialog({
       url: password?.url || "",
       category: password?.category || "Personal",
       notes: password?.notes || "",
+      owner: (password as any)?.owner || "Me",
     },
   });
 
   const currentPassword = form.watch("password") || "";
   const currentUrl = form.watch("url") || "";
+  const selectedOwner = form.watch("owner");
 
   useEffect(() => {
     if (!isOpen) return;
@@ -159,9 +175,10 @@ export default function PasswordFormDialog({
         url: password.url || "",
         category: password.category || "Personal",
         notes: password.notes || "",
+        owner: (password as any).owner || "Me",
       });
     } else {
-      form.reset({ title: "", username: "", password: "", url: "", category: "Personal", notes: "" });
+      form.reset({ title: "", username: "", password: "", url: "", category: "Personal", notes: "", owner: "Me" });
     }
   }, [password, isOpen]);
 
@@ -192,7 +209,7 @@ export default function PasswordFormDialog({
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     if (password) {
       updateMutation.mutate(
-        { id: password.id, data: values },
+        { id: password.id, data: values as any },
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListPasswordsQueryKey() });
@@ -206,7 +223,7 @@ export default function PasswordFormDialog({
       );
     } else {
       createMutation.mutate(
-        { data: values },
+        { data: values as any },
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListPasswordsQueryKey() });
@@ -227,7 +244,7 @@ export default function PasswordFormDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden gap-0">
+      <DialogContent className="sm:max-w-[520px] p-0 overflow-hidden gap-0">
 
         {/* Header */}
         <div className="bg-gradient-to-r from-[hsl(210,100%,40%)] to-[hsl(210,100%,32%)] px-6 pt-5 pb-4">
@@ -247,7 +264,46 @@ export default function PasswordFormDialog({
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="px-6 py-5 space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+
+            {/* Owner / Family Member picker */}
+            <FormField
+              control={form.control}
+              name="owner"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[13px] font-semibold flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                    Belongs to
+                  </FormLabel>
+                  <div className="flex flex-wrap gap-2 pt-0.5">
+                    {FAMILY_MEMBERS.map((m) => (
+                      <button
+                        key={m.label}
+                        type="button"
+                        onClick={() => field.onChange(m.label)}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-semibold border transition-all",
+                          field.value === m.label
+                            ? `${m.color} border-current shadow-sm scale-105`
+                            : "bg-muted/40 text-muted-foreground border-border hover:border-primary/30"
+                        )}
+                      >
+                        <span>{m.emoji}</span>
+                        {m.label}
+                      </button>
+                    ))}
+                    {/* Custom name chip if value doesn't match presets */}
+                    {!FAMILY_MEMBERS.find(m => m.label === field.value) && field.value && (
+                      <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-semibold border bg-slate-100 text-slate-700 border-slate-300">
+                        👤 {field.value}
+                      </span>
+                    )}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Title */}
             <FormField

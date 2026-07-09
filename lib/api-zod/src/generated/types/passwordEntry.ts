@@ -18,6 +18,7 @@ export interface PasswordEntry {
   /** @nullable */
   notes?: string | null;
   strength?: PasswordEntryStrength;
+  owner: string;
   createdAt: string;
   updatedAt: string;
 }
