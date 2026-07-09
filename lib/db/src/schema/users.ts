@@ -1,4 +1,4 @@
-import { pgTable, serial, text, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, boolean, timestamp, date } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -7,6 +7,11 @@ export const usersTable = pgTable("users", {
   totpSecret: text("totp_secret"),
   totpEnabled: boolean("totp_enabled").notNull().default(false),
   name: text("name"),
+  phone: text("phone"),
+  dateOfBirth: date("date_of_birth"),
+  bio: text("bio"),
+  avatarColor: text("avatar_color"),
+  address: text("address"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

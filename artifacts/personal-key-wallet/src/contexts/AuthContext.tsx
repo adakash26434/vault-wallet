@@ -6,6 +6,11 @@ export interface AuthUser {
   email: string;
   name?: string | null;
   totpEnabled: boolean;
+  phone?: string | null;
+  dateOfBirth?: string | null;
+  bio?: string | null;
+  address?: string | null;
+  avatarColor?: string | null;
 }
 
 interface AuthState {

@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, KeyRound, FileText, Wallet, BarChart3,
   Lightbulb, ShieldCheck, LogOut, ChevronRight, User,
-  Bell, Search, Menu, BookOpen, Download, X,
+  Bell, Search, Menu, BookOpen, Download, X, FileSpreadsheet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -39,6 +39,12 @@ const navSections = [
     ],
   },
   {
+    label: "Career",
+    items: [
+      { href: "/cv", label: "CV Builder", icon: FileSpreadsheet },
+    ],
+  },
+  {
     label: "Tools",
     items: [
       { href: "/insights", label: "Insights", icon: Lightbulb },
@@ -54,7 +60,9 @@ const PAGE_TITLES: Record<string, string> = {
   "/finance": "Finance",
   "/finance/analytics": "Analytics",
   "/insights": "Insights",
-  "/extension": "Security Guide",
+  "/extension": "Extension & App",
+  "/profile": "My Profile",
+  "/cv": "CV Builder",
 };
 
 function NavList({ location, onClick }: { location: string; onClick?: () => void }) {
@@ -192,9 +200,20 @@ export default function Layout({ children }: LayoutProps) {
               </div>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="top" className="w-48">
+          <DropdownMenuContent align="end" side="top" className="w-52">
             <DropdownMenuItem disabled className="text-xs text-muted-foreground">
               <User className="h-3.5 w-3.5 mr-2" /> {user?.email}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/profile" className="flex items-center cursor-pointer">
+                <User className="h-3.5 w-3.5 mr-2" /> My Profile
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/cv" className="flex items-center cursor-pointer">
+                <FileSpreadsheet className="h-3.5 w-3.5 mr-2" /> CV Builder
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">

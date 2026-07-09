@@ -11,6 +11,8 @@ import Finance from "@/pages/Finance";
 import FinanceAnalytics from "@/pages/FinanceAnalytics";
 import Insights from "@/pages/Insights";
 import Extension from "@/pages/Extension";
+import Profile from "@/pages/Profile";
+import CVBuilder from "@/pages/CVBuilder";
 import Login from "@/pages/auth/Login";
 import Signup from "@/pages/auth/Signup";
 import SetupTwoFactor from "@/pages/auth/SetupTwoFactor";
@@ -71,6 +73,8 @@ function Router() {
               <Route path="/finance/analytics" component={() => <ProtectedRoute component={FinanceAnalytics} />} />
               <Route path="/insights" component={() => <ProtectedRoute component={Insights} />} />
               <Route path="/extension" component={() => <ProtectedRoute component={Extension} />} />
+              <Route path="/profile" component={() => <ProtectedRoute component={Profile} />} />
+              <Route path="/cv" component={() => <ProtectedRoute component={CVBuilder} />} />
               <Route component={NotFound} />
             </Switch>
           </Layout>

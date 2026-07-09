@@ -12,4 +12,14 @@ export interface AuthUser {
   /** @nullable */
   name?: string | null;
   totpEnabled: boolean;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  dateOfBirth?: string | null;
+  /** @nullable */
+  bio?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  avatarColor?: string | null;
 }

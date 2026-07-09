@@ -253,11 +253,96 @@ export interface AuthUser {
   /** @nullable */
   name?: string | null;
   totpEnabled: boolean;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  dateOfBirth?: string | null;
+  /** @nullable */
+  bio?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  avatarColor?: string | null;
 }
 
 export interface AuthSessionResponse {
   token: string;
   user: AuthUser;
+}
+
+export interface ProfileUpdateBody {
+  name?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  bio?: string;
+  address?: string;
+  avatarColor?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  /** @minLength 8 */
+  newPassword: string;
+}
+
+export interface CvExperienceItem {
+  id?: string;
+  company?: string;
+  position?: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+  current?: boolean;
+  description?: string;
+}
+
+export interface CvEducationItem {
+  id?: string;
+  institution?: string;
+  degree?: string;
+  field?: string;
+  startDate?: string;
+  endDate?: string;
+  grade?: string;
+}
+
+export interface CvProfile {
+  id: number;
+  userId: number;
+  fullName: string;
+  jobTitle: string;
+  email: string;
+  phone: string;
+  address: string;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  linkedin?: string | null;
+  /** @nullable */
+  summary?: string | null;
+  experience: string;
+  education: string;
+  skills: string;
+  languages: string;
+  templateColor: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CvProfileInput {
+  fullName: string;
+  jobTitle: string;
+  email: string;
+  phone: string;
+  address: string;
+  website?: string;
+  linkedin?: string;
+  summary?: string;
+  experience?: string;
+  education?: string;
+  skills?: string;
+  languages?: string;
+  templateColor?: string;
 }
 
 export type ListPasswordsParams = {

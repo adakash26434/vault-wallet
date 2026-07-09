@@ -200,7 +200,87 @@ router.get("/auth/me", async (req, res) => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, payload.userId));
   if (!user) return res.status(401).json({ error: "User not found" });
 
-  return res.json({ id: user.id, email: user.email, name: user.name, totpEnabled: user.totpEnabled });
+  return res.json({
+    id: user.id, email: user.email, name: user.name, totpEnabled: user.totpEnabled,
+    phone: user.phone, dateOfBirth: user.dateOfBirth, bio: user.bio,
+    address: user.address, avatarColor: user.avatarColor,
+  });
+});
+
+const ProfileUpdateBody = z.object({
+  name: z.string().min(1).optional(),
+  phone: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  bio: z.string().optional(),
+  address: z.string().optional(),
+  avatarColor: z.string().optional(),
+});
+
+router.patch("/auth/profile", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+  const payload = verifyToken(token);
+  if (!payload || payload.type !== "session") {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const parsed = ProfileUpdateBody.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid body", details: parsed.error.issues });
+  }
+
+  const updateData: Partial<typeof usersTable.$inferInsert> = {};
+  if (parsed.data.name !== undefined) updateData.name = parsed.data.name;
+  if (parsed.data.phone !== undefined) updateData.phone = parsed.data.phone;
+  if (parsed.data.dateOfBirth !== undefined) updateData.dateOfBirth = parsed.data.dateOfBirth;
+  if (parsed.data.bio !== undefined) updateData.bio = parsed.data.bio;
+  if (parsed.data.address !== undefined) updateData.address = parsed.data.address;
+  if (parsed.data.avatarColor !== undefined) updateData.avatarColor = parsed.data.avatarColor;
+
+  const [updated] = await db.update(usersTable).set(updateData).where(eq(usersTable.id, payload.userId)).returning();
+  if (!updated) return res.status(404).json({ error: "User not found" });
+
+  return res.json({
+    id: updated.id, email: updated.email, name: updated.name, totpEnabled: updated.totpEnabled,
+    phone: updated.phone, dateOfBirth: updated.dateOfBirth, bio: updated.bio,
+    address: updated.address, avatarColor: updated.avatarColor,
+  });
+});
+
+const ChangePasswordBody = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8, "New password must be at least 8 characters"),
+});
+
+router.post("/auth/change-password", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+  const payload = verifyToken(token);
+  if (!payload || payload.type !== "session") {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const parsed = ChangePasswordBody.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid body", details: parsed.error.issues });
+  }
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, payload.userId));
+  if (!user) return res.status(401).json({ error: "User not found" });
+
+  const isValid = await bcrypt.compare(parsed.data.currentPassword, user.passwordHash);
+  if (!isValid) {
+    return res.status(400).json({ error: "Current password is incorrect" });
+  }
+
+  const newHash = await bcrypt.hash(parsed.data.newPassword, 12);
+  await db.update(usersTable).set({ passwordHash: newHash }).where(eq(usersTable.id, user.id));
+
+  return res.json({ message: "Password changed successfully" });
 });
 
 router.post("/auth/logout", (_req, res) => {

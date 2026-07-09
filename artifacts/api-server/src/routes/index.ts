@@ -6,6 +6,7 @@ import documentsRouter from "./documents";
 import financeRouter from "./finance";
 import dashboardRouter from "./dashboard";
 import extensionRouter from "./extension";
+import cvRouter from "./cv";
 import { requireAuth } from "../middlewares/auth.js";
 
 const router: IRouter = Router();
@@ -22,5 +23,6 @@ router.use(documentsRouter);
 router.use(financeRouter);
 router.use(dashboardRouter);
 router.use(extensionRouter);
+router.use(cvRouter);
 
 export default router;

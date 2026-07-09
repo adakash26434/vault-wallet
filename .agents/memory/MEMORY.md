@@ -1,1 +1,3 @@
 - [Browser Extension + PWA](browser-ext-pwa.md) — extension in browser-extension/ dir, Manifest V3, auth via JWT in chrome.storage.local; PWA via vite-plugin-pwa with workbox.
+- [Profile + CV Builder](profile-cv-builder.md) — users table extended with profile fields; cv_profiles table stores JSON sections; profile PATCH/change-password + CV upsert routes added to auth.ts.
+- [OpenAPI Codegen name conflicts](codegen-name-conflicts.md) — Orval generates same name in api.ts (Zod) AND types/ (TS interface); rename schema in openapi.yaml to avoid collision (e.g. ChangePasswordBody → ChangePasswordRequest).

@@ -36,7 +36,12 @@ export const VerifyTotpSetupResponse = zod.object({
   "id": zod.number(),
   "email": zod.string(),
   "name": zod.string().nullish(),
-  "totpEnabled": zod.boolean()
+  "totpEnabled": zod.boolean(),
+  "phone": zod.string().nullish(),
+  "dateOfBirth": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "avatarColor": zod.string().nullish()
 })
 })
 
@@ -69,7 +74,12 @@ export const VerifyTotpResponse = zod.object({
   "id": zod.number(),
   "email": zod.string(),
   "name": zod.string().nullish(),
-  "totpEnabled": zod.boolean()
+  "totpEnabled": zod.boolean(),
+  "phone": zod.string().nullish(),
+  "dateOfBirth": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "avatarColor": zod.string().nullish()
 })
 })
 
@@ -81,7 +91,114 @@ export const GetMeResponse = zod.object({
   "id": zod.number(),
   "email": zod.string(),
   "name": zod.string().nullish(),
-  "totpEnabled": zod.boolean()
+  "totpEnabled": zod.boolean(),
+  "phone": zod.string().nullish(),
+  "dateOfBirth": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "avatarColor": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update user profile details
+ */
+export const UpdateProfileBody = zod.object({
+  "name": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "dateOfBirth": zod.string().optional(),
+  "bio": zod.string().optional(),
+  "address": zod.string().optional(),
+  "avatarColor": zod.string().optional()
+})
+
+export const UpdateProfileResponse = zod.object({
+  "id": zod.number(),
+  "email": zod.string(),
+  "name": zod.string().nullish(),
+  "totpEnabled": zod.boolean(),
+  "phone": zod.string().nullish(),
+  "dateOfBirth": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "avatarColor": zod.string().nullish()
+})
+
+
+/**
+ * @summary Change account password
+ */
+export const changePasswordBodyNewPasswordMin = 8;
+
+
+
+export const ChangePasswordBody = zod.object({
+  "currentPassword": zod.string(),
+  "newPassword": zod.string().min(changePasswordBodyNewPasswordMin)
+})
+
+
+/**
+ * @summary Get current user CV profile
+ */
+export const GetCvResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "fullName": zod.string(),
+  "jobTitle": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "address": zod.string(),
+  "website": zod.string().nullish(),
+  "linkedin": zod.string().nullish(),
+  "summary": zod.string().nullish(),
+  "experience": zod.string(),
+  "education": zod.string(),
+  "skills": zod.string(),
+  "languages": zod.string(),
+  "templateColor": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Create or update CV profile
+ */
+export const UpsertCvBody = zod.object({
+  "fullName": zod.string(),
+  "jobTitle": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "address": zod.string(),
+  "website": zod.string().optional(),
+  "linkedin": zod.string().optional(),
+  "summary": zod.string().optional(),
+  "experience": zod.string().optional(),
+  "education": zod.string().optional(),
+  "skills": zod.string().optional(),
+  "languages": zod.string().optional(),
+  "templateColor": zod.string().optional()
+})
+
+export const UpsertCvResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "fullName": zod.string(),
+  "jobTitle": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "address": zod.string(),
+  "website": zod.string().nullish(),
+  "linkedin": zod.string().nullish(),
+  "summary": zod.string().nullish(),
+  "experience": zod.string(),
+  "education": zod.string(),
+  "skills": zod.string(),
+  "languages": zod.string(),
+  "templateColor": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
 })
 
 

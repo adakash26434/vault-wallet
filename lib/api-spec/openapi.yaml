@@ -122,6 +122,52 @@ paths:
         "401":
           description: Unauthorized
 
+  /auth/profile:
+    patch:
+      operationId: updateProfile
+      tags: [auth]
+      summary: Update user profile details
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdateBody"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "400":
+          description: Invalid body
+        "401":
+          description: Unauthorized
+
+  /auth/change-password:
+    post:
+      operationId: changePassword
+      tags: [auth]
+      summary: Change account password
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: Password changed
+        "400":
+          description: Invalid current password or body
+        "401":
+          description: Unauthorized
+
   /auth/logout:
     post:
       operationId: logout
@@ -130,6 +176,46 @@ paths:
       responses:
         "204":
           description: Logged out
+
+  /cv:
+    get:
+      operationId: getCv
+      tags: [auth]
+      summary: Get current user CV profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: CV profile (null if not created yet)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CvProfile"
+        "401":
+          description: Unauthorized
+    put:
+      operationId: upsertCv
+      tags: [auth]
+      summary: Create or update CV profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CvProfileInput"
+      responses:
+        "200":
+          description: CV profile saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CvProfile"
+        "400":
+          description: Invalid body
+        "401":
+          description: Unauthorized
   /healthz:
     get:
       operationId: healthCheck
@@ -844,6 +930,95 @@ components:
         user:
           $ref: "#/components/schemas/AuthUser"
 
+    ProfileUpdateBody:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        dateOfBirth:
+          type: string
+        bio:
+          type: string
+        address:
+          type: string
+        avatarColor:
+          type: string
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 8
+
+    CvExperienceItem:
+      type: object
+      properties:
+        id: { type: string }
+        company: { type: string }
+        position: { type: string }
+        location: { type: string }
+        startDate: { type: string }
+        endDate: { type: string }
+        current: { type: boolean }
+        description: { type: string }
+
+    CvEducationItem:
+      type: object
+      properties:
+        id: { type: string }
+        institution: { type: string }
+        degree: { type: string }
+        field: { type: string }
+        startDate: { type: string }
+        endDate: { type: string }
+        grade: { type: string }
+
+    CvProfile:
+      type: object
+      required: [id, userId, fullName, jobTitle, email, phone, address, experience, education, skills, languages, templateColor, createdAt, updatedAt]
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        fullName: { type: string }
+        jobTitle: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        address: { type: string }
+        website: { type: ["string", "null"] }
+        linkedin: { type: ["string", "null"] }
+        summary: { type: ["string", "null"] }
+        experience: { type: string }
+        education: { type: string }
+        skills: { type: string }
+        languages: { type: string }
+        templateColor: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    CvProfileInput:
+      type: object
+      required: [fullName, jobTitle, email, phone, address]
+      properties:
+        fullName: { type: string }
+        jobTitle: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        address: { type: string }
+        website: { type: string }
+        linkedin: { type: string }
+        summary: { type: string }
+        experience: { type: string }
+        education: { type: string }
+        skills: { type: string }
+        languages: { type: string }
+        templateColor: { type: string }
+
     AuthUser:
       type: object
       required: [id, email, totpEnabled]
@@ -856,6 +1031,16 @@ components:
           type: ["string", "null"]
         totpEnabled:
           type: boolean
+        phone:
+          type: ["string", "null"]
+        dateOfBirth:
+          type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        avatarColor:
+          type: ["string", "null"]
 
   securitySchemes:
     bearerAuth:
