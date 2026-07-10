@@ -49,6 +49,31 @@ app.use("/api/auth/signup", authLimiter);
 app.use("/api/auth/verify", authLimiter);
 app.use("/api/auth/verify-setup", authLimiter);
 
+// ── Rate limiting on data endpoints (abuse protection) ──────────────────────
+// Stricter limits on write operations, relaxed on reads
+const dataReadLimiter = rateLimit.default({
+  windowMs: 60 * 1000, // 1 minute
+  max: 120, // 120 reads per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please slow down." },
+});
+
+const dataWriteLimiter = rateLimit.default({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // 30 writes per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please slow down." },
+});
+
+app.use("/api/passwords", dataReadLimiter);
+app.use("/api/documents", dataReadLimiter);
+app.use("/api/finance", dataReadLimiter);
+app.use("/api/tasks", dataReadLimiter);
+app.use("/api/dashboard", dataReadLimiter);
+app.use("/api/cv", dataReadLimiter);
+
 // ── Body parsing ───────────────────────────────────────────────────────────
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));

@@ -4,6 +4,7 @@ import {
   LayoutDashboard, KeyRound, FileText, Wallet, BarChart3,
   Lightbulb, ShieldCheck, LogOut, ChevronRight, User,
   Bell, Search, Menu, BookOpen, Download, X, FileSpreadsheet, BellRing,
+  Moon, Sun,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -117,6 +118,12 @@ export default function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const [cmdOpen, setCmdOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return document.documentElement.classList.contains("dark");
+    }
+    return false;
+  });
   type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
   const [pwaInstalled, setPwaInstalled] = useState(false);
   const [showPwaBanner, setShowPwaBanner] = useState(false);
@@ -154,6 +161,30 @@ export default function Layout({ children }: LayoutProps) {
     setShowPwaBanner(false);
     sessionStorage.setItem("kw-pwa-dismissed", "1");
   }
+
+  function toggleDarkMode() {
+    setDarkMode((prev) => {
+      const next = !prev;
+      document.documentElement.classList.toggle("dark", next);
+      localStorage.setItem("kw-theme", next ? "dark" : "light");
+      return next;
+    });
+  }
+
+  // Load saved dark mode preference on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("kw-theme");
+    if (saved === "dark") {
+      document.documentElement.classList.add("dark");
+      setDarkMode(true);
+    } else if (saved === "light") {
+      document.documentElement.classList.remove("dark");
+      setDarkMode(false);
+    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      document.documentElement.classList.add("dark");
+      setDarkMode(true);
+    }
+  }, []);
 
   // Cmd+K / Ctrl+K keyboard shortcut
   useEffect(() => {
@@ -274,8 +305,8 @@ export default function Layout({ children }: LayoutProps) {
       <aside
         className="w-[220px] flex-shrink-0 flex-col hidden md:flex"
         style={{
-          background: "white",
-          borderRight: "1px solid hsl(var(--border))",
+          background: "hsl(var(--sidebar))",
+          borderRight: "1px solid hsl(var(--sidebar-border))",
           boxShadow: "2px 0 8px rgba(0,0,0,0.04)",
         }}
       >
@@ -298,7 +329,7 @@ export default function Layout({ children }: LayoutProps) {
         <header
           className="h-[52px] flex items-center px-4 md:px-6 gap-3 shrink-0"
           style={{
-            background: "white",
+            background: "hsl(var(--card))",
             borderBottom: "1px solid hsl(var(--border))",
             boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
           }}
@@ -359,6 +390,17 @@ export default function Layout({ children }: LayoutProps) {
           {/* Bell */}
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted">
             <Bell className="h-4 w-4" />
+          </Button>
+
+          {/* Dark mode toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted"
+            onClick={toggleDarkMode}
+            title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
 
           <div className="w-px h-5 bg-border mx-1 hidden sm:block" />

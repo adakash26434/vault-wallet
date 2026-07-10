@@ -23,13 +23,15 @@ const CvInput = z.object({
 });
 
 router.get("/cv", async (req, res) => {
-  const userId = (req as unknown as { userId: number }).userId;
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const [cv] = await db.select().from(cvProfilesTable).where(eq(cvProfilesTable.userId, userId));
   return res.json(cv ?? null);
 });
 
 router.put("/cv", async (req, res) => {
-  const userId = (req as unknown as { userId: number }).userId;
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const parsed = CvInput.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid body", details: parsed.error.issues });
