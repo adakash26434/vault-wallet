@@ -22,13 +22,17 @@ function decryptRow(r: typeof financeRecordsTable.$inferSelect) {
   };
 }
 
+// GET /finance/records — list current user's finance records with optional filters
 router.get("/finance/records", async (req, res) => {
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
   const parsed = ListFinanceRecordsQueryParams.safeParse(req.query);
   if (!parsed.success) return res.status(400).json({ error: "Invalid query params" });
 
   const { type, month, year } = parsed.data;
 
-  const conditions = [];
+  const conditions = [eq(financeRecordsTable.userId, userId)];
   if (type) conditions.push(eq(financeRecordsTable.type, type as "income" | "expense"));
   if (month) conditions.push(sql`EXTRACT(MONTH FROM ${financeRecordsTable.date}) = ${Number(month)}`);
   if (year) conditions.push(sql`EXTRACT(YEAR FROM ${financeRecordsTable.date}) = ${Number(year)}`);
@@ -36,19 +40,24 @@ router.get("/finance/records", async (req, res) => {
   const rows = await db
     .select()
     .from(financeRecordsTable)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(financeRecordsTable.date);
 
   return res.json(rows.map(decryptRow));
 });
 
+// POST /finance/records — create a new finance record for current user
 router.post("/finance/records", async (req, res) => {
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
   const parsed = CreateFinanceRecordBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Invalid body" });
 
   const [row] = await db
     .insert(financeRecordsTable)
     .values({
+      userId,
       type: parsed.data.type as "income" | "expense",
       category: parsed.data.category,
       amount: String(parsed.data.amount),
@@ -60,7 +69,11 @@ router.post("/finance/records", async (req, res) => {
   return res.status(201).json(decryptRow(row));
 });
 
+// PATCH /finance/records/:id — update a finance record (only if owned by current user)
 router.patch("/finance/records/:id", async (req, res) => {
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
   const paramsParsed = UpdateFinanceRecordParams.safeParse({ id: Number(req.params.id) });
   if (!paramsParsed.success) return res.status(400).json({ error: "Invalid id" });
 
@@ -77,22 +90,35 @@ router.patch("/finance/records/:id", async (req, res) => {
   const [row] = await db
     .update(financeRecordsTable)
     .set(updates)
-    .where(eq(financeRecordsTable.id, paramsParsed.data.id))
+    .where(and(eq(financeRecordsTable.id, paramsParsed.data.id), eq(financeRecordsTable.userId, userId)))
     .returning();
 
   if (!row) return res.status(404).json({ error: "Not found" });
   return res.json(decryptRow(row));
 });
 
+// DELETE /finance/records/:id — delete a finance record (only if owned by current user)
 router.delete("/finance/records/:id", async (req, res) => {
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
   const parsed = DeleteFinanceRecordParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
 
-  await db.delete(financeRecordsTable).where(eq(financeRecordsTable.id, parsed.data.id));
+  const [deleted] = await db
+    .delete(financeRecordsTable)
+    .where(and(eq(financeRecordsTable.id, parsed.data.id), eq(financeRecordsTable.userId, userId)))
+    .returning();
+
+  if (!deleted) return res.status(404).json({ error: "Not found" });
   return res.status(204).send();
 });
 
+// GET /finance/summary — get finance summary for current user only
 router.get("/finance/summary", async (req, res) => {
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
   const parsed = GetFinanceSummaryQueryParams.safeParse(req.query);
   if (!parsed.success) return res.status(400).json({ error: "Invalid query params" });
 
@@ -105,6 +131,7 @@ router.get("/finance/summary", async (req, res) => {
     .from(financeRecordsTable)
     .where(
       and(
+        eq(financeRecordsTable.userId, userId),
         sql`EXTRACT(MONTH FROM ${financeRecordsTable.date}) = ${targetMonth}`,
         sql`EXTRACT(YEAR FROM ${financeRecordsTable.date}) = ${targetYear}`
       )

@@ -328,7 +328,20 @@ router.post("/auth/change-password", async (req, res) => {
   const newHash = await bcrypt.hash(parsed.data.newPassword, 12);
   await db.update(usersTable).set({ passwordHash: newHash }).where(eq(usersTable.id, user.id));
 
-  return res.json({ message: "Password changed successfully" });
+  // Invalidate all other sessions (force re-login on other devices)
+  // Keep the current session so user doesn't get kicked out immediately
+  const allSessions = await db
+    .select()
+    .from(sessionsTable)
+    .where(and(eq(sessionsTable.userId, user.id), eq(sessionsTable.isActive, true)));
+
+  for (const s of allSessions) {
+    if (s.tokenId !== payload.jti) {
+      await db.update(sessionsTable).set({ isActive: false }).where(eq(sessionsTable.id, s.id));
+    }
+  }
+
+  return res.json({ message: "Password changed successfully. All other sessions have been logged out." });
 });
 
 // GET /auth/sessions — list active sessions for current user

@@ -1,12 +1,21 @@
 import { Router } from "express";
 import { db, passwordsTable, documentsTable, financeRecordsTable } from "@workspace/db";
-import { sql, and } from "drizzle-orm";
+import { sql, and, eq } from "drizzle-orm";
 
 const router = Router();
 
 router.get("/dashboard/overview", async (req, res) => {
-  const passwords = await db.select().from(passwordsTable);
-  const documents = await db.select().from(documentsTable);
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const passwords = await db
+    .select()
+    .from(passwordsTable)
+    .where(eq(passwordsTable.userId, userId));
+  const documents = await db
+    .select()
+    .from(documentsTable)
+    .where(eq(documentsTable.userId, userId));
 
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -28,6 +37,7 @@ router.get("/dashboard/overview", async (req, res) => {
     .from(financeRecordsTable)
     .where(
       and(
+        eq(financeRecordsTable.userId, userId),
         sql`EXTRACT(MONTH FROM ${financeRecordsTable.date}) = ${currentMonth}`,
         sql`EXTRACT(YEAR FROM ${financeRecordsTable.date}) = ${currentYear}`
       )
@@ -50,8 +60,17 @@ router.get("/dashboard/overview", async (req, res) => {
 });
 
 router.get("/dashboard/alerts", async (req, res) => {
-  const passwords = await db.select().from(passwordsTable);
-  const documents = await db.select().from(documentsTable);
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const passwords = await db
+    .select()
+    .from(passwordsTable)
+    .where(eq(passwordsTable.userId, userId));
+  const documents = await db
+    .select()
+    .from(documentsTable)
+    .where(eq(documentsTable.userId, userId));
 
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, passwordsTable } from "@workspace/db";
-import { eq, ilike } from "drizzle-orm";
+import { eq, ilike, and } from "drizzle-orm";
 import {
   ListPasswordsQueryParams,
   CreatePasswordBody,
@@ -60,26 +60,33 @@ function decryptRow(r: typeof passwordsTable.$inferSelect) {
   };
 }
 
+// GET /passwords — list current user's passwords with filtering
 router.get("/passwords", async (req, res) => {
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
   const parsed = ListPasswordsQueryParams.safeParse(req.query);
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid query params" });
   }
   const { search, category, owner } = parsed.data as { search?: string; category?: string; owner?: string };
 
-  // Fetch rows — title is not encrypted so we can still DB-filter on it.
-  // username/url are encrypted so we filter those in-app after decryption.
+  // Build userId filter condition
+  const userIdCondition = eq(passwordsTable.userId, userId);
+
+  // Fetch rows for this user only — title is not encrypted so we can DB-filter on it
+  // username/url are encrypted so we filter those in-app after decryption
   let rows = await db
     .select()
     .from(passwordsTable)
     .where(
       search && category
-        ? undefined // fetch all, filter below
+        ? and(userIdCondition)
         : search
-        ? ilike(passwordsTable.title, `%${search}%`)
+        ? and(userIdCondition, ilike(passwordsTable.title, `%${search}%`))
         : category
-        ? eq(passwordsTable.category, category)
-        : undefined
+        ? and(userIdCondition, eq(passwordsTable.category, category))
+        : userIdCondition
     );
 
   const decrypted = rows.map(decryptRow);
@@ -105,7 +112,11 @@ router.get("/passwords", async (req, res) => {
   return res.json(filtered);
 });
 
+// POST /passwords — create a new password for current user
 router.post("/passwords", async (req, res) => {
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
   const parsed = CreatePasswordBody.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid body" });
@@ -116,6 +127,7 @@ router.post("/passwords", async (req, res) => {
   const [row] = await db
     .insert(passwordsTable)
     .values({
+      userId,
       title,
       username: encryptField(username) ?? "",
       password: encryptField(password) ?? "",
@@ -130,7 +142,11 @@ router.post("/passwords", async (req, res) => {
   return res.status(201).json(decryptRow(row));
 });
 
+// GET /passwords/match — find passwords matching a domain for current user
 router.get("/passwords/match", async (req, res) => {
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
   const domain = req.query.domain as string;
   if (!domain) return res.status(400).json({ error: "domain required" });
 
@@ -140,13 +156,14 @@ router.get("/passwords/match", async (req, res) => {
     .split("/")[0]
     .toLowerCase();
 
-  // First try exact title match on the non-encrypted title field (fast path)
-  // This avoids decrypting all rows when there's a title match
   const baseMatch = cleanDomain.split(".")[0];
-  let rows = await db
+  const rows = await db
     .select()
     .from(passwordsTable)
-    .where(ilike(passwordsTable.title, `%${baseMatch}%`));
+    .where(and(
+      eq(passwordsTable.userId, userId),
+      ilike(passwordsTable.title, `%${baseMatch}%`)
+    ));
 
   const decrypted = rows.map(decryptRow);
 
@@ -164,12 +181,20 @@ router.get("/passwords/match", async (req, res) => {
   return res.json(matched);
 });
 
+// GET /passwords/stats — get password statistics for current user
 router.get("/passwords/stats", async (req, res) => {
-  const rows = await db.select().from(passwordsTable);
-  const decrypted = rows.map(decryptRow);
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const rows = await db
+    .select()
+    .from(passwordsTable)
+    .where(eq(passwordsTable.userId, userId));
 
   const counts = { weak: 0, medium: 0, strong: 0 };
   rows.forEach((r) => { counts[r.strength]++; });
+
+  const decrypted = rows.map(decryptRow);
 
   // Duplicate detection on decrypted passwords
   const seen = new Set<string>();
@@ -188,20 +213,28 @@ router.get("/passwords/stats", async (req, res) => {
   });
 });
 
+// GET /passwords/:id — get a specific password (only if owned by current user)
 router.get("/passwords/:id", async (req, res) => {
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
   const parsed = GetPasswordParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
 
   const [row] = await db
     .select()
     .from(passwordsTable)
-    .where(eq(passwordsTable.id, parsed.data.id));
+    .where(and(eq(passwordsTable.id, parsed.data.id), eq(passwordsTable.userId, userId)));
   if (!row) return res.status(404).json({ error: "Not found" });
 
   return res.json(decryptRow(row));
 });
 
+// PATCH /passwords/:id — update a password (only if owned by current user)
 router.patch("/passwords/:id", async (req, res) => {
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
   const paramsParsed = UpdatePasswordParams.safeParse({ id: Number(req.params.id) });
   if (!paramsParsed.success) return res.status(400).json({ error: "Invalid id" });
 
@@ -226,18 +259,27 @@ router.patch("/passwords/:id", async (req, res) => {
   const [row] = await db
     .update(passwordsTable)
     .set(updates)
-    .where(eq(passwordsTable.id, paramsParsed.data.id))
+    .where(and(eq(passwordsTable.id, paramsParsed.data.id), eq(passwordsTable.userId, userId)))
     .returning();
 
   if (!row) return res.status(404).json({ error: "Not found" });
   return res.json(decryptRow(row));
 });
 
+// DELETE /passwords/:id — delete a password (only if owned by current user)
 router.delete("/passwords/:id", async (req, res) => {
+  const userId = req.userId;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
   const parsed = DeletePasswordParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
 
-  await db.delete(passwordsTable).where(eq(passwordsTable.id, parsed.data.id));
+  const [deleted] = await db
+    .delete(passwordsTable)
+    .where(and(eq(passwordsTable.id, parsed.data.id), eq(passwordsTable.userId, userId)))
+    .returning();
+
+  if (!deleted) return res.status(404).json({ error: "Not found" });
   return res.status(204).send();
 });
 
