@@ -54,7 +54,7 @@ function Section({ title, icon: Icon, children, defaultOpen = true }: { title: s
         </div>
         {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </button>
-      {open && <div className="p-4 space-y-3 bg-white">{children}</div>}
+      {open && <div className="p-4 space-y-3 bg-card">{children}</div>}
     </div>
   );
 }

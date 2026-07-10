@@ -48,7 +48,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     db.update(sessionsTable)
       .set({ lastSeenAt: new Date() })
       .where(eq(sessionsTable.tokenId, payload.jti))
-      .catch(() => {});
+      .catch((err) => console.error("[auth] Failed to update lastSeenAt:", err));
   }
 
   req.userId = payload.userId;

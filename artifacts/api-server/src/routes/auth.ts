@@ -17,7 +17,17 @@ import { randomUUID } from "node:crypto";
 
 const router = Router();
 
-const JWT_SECRET = process.env.SESSION_SECRET || "dev-secret-change-in-prod";
+const JWT_SECRET = (() => {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("SESSION_SECRET environment variable is required in production");
+    }
+    console.warn("[auth] WARNING: SESSION_SECRET not set. Using dev fallback. Set a real secret for production!");
+    return "dev-secret-change-in-prod";
+  }
+  return secret;
+})();
 const TEMP_TOKEN_EXPIRY = "10m";
 const SESSION_EXPIRY = "7d";
 const APP_NAME = "PersonalKeyWallet";
@@ -318,7 +328,20 @@ router.post("/auth/change-password", async (req, res) => {
   const newHash = await bcrypt.hash(parsed.data.newPassword, 12);
   await db.update(usersTable).set({ passwordHash: newHash }).where(eq(usersTable.id, user.id));
 
-  return res.json({ message: "Password changed successfully" });
+  // Invalidate all other sessions (force re-login on other devices)
+  // Keep the current session so user doesn't get kicked out immediately
+  const allSessions = await db
+    .select()
+    .from(sessionsTable)
+    .where(and(eq(sessionsTable.userId, user.id), eq(sessionsTable.isActive, true)));
+
+  for (const s of allSessions) {
+    if (s.tokenId !== payload.jti) {
+      await db.update(sessionsTable).set({ isActive: false }).where(eq(sessionsTable.id, s.id));
+    }
+  }
+
+  return res.json({ message: "Password changed successfully. All other sessions have been logged out." });
 });
 
 // GET /auth/sessions — list active sessions for current user

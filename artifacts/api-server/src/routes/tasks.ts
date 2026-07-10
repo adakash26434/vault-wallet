@@ -32,7 +32,7 @@ const TaskUpdate = z.object({
 
 // GET /tasks — list tasks for current user
 router.get("/tasks", async (req, res) => {
-  const userId = (req as { user?: { userId: number } }).user?.userId;
+  const userId = req.userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   const rows = await db
@@ -60,7 +60,7 @@ router.get("/tasks", async (req, res) => {
 
 // POST /tasks — create a task
 router.post("/tasks", async (req, res) => {
-  const userId = (req as { user?: { userId: number } }).user?.userId;
+  const userId = req.userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   const parsed = TaskInput.safeParse(req.body);
@@ -97,7 +97,7 @@ router.post("/tasks", async (req, res) => {
 
 // PATCH /tasks/:id — update a task
 router.patch("/tasks/:id", async (req, res) => {
-  const userId = (req as { user?: { userId: number } }).user?.userId;
+  const userId = req.userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   const taskId = Number(req.params.id);
@@ -141,7 +141,7 @@ router.patch("/tasks/:id", async (req, res) => {
 
 // DELETE /tasks/:id — delete a task
 router.delete("/tasks/:id", async (req, res) => {
-  const userId = (req as { user?: { userId: number } }).user?.userId;
+  const userId = req.userId;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   const taskId = Number(req.params.id);

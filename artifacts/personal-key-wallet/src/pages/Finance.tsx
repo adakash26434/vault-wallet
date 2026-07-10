@@ -147,7 +147,7 @@ export default function Finance() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+        <Card className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
           <CardHeader className="pb-2 pt-4 px-5">
             <CardTitle className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">Total Income</CardTitle>
           </CardHeader>
@@ -163,7 +163,7 @@ export default function Finance() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+        <Card className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
           <CardHeader className="pb-2 pt-4 px-5">
             <CardTitle className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">Total Expenses</CardTitle>
           </CardHeader>
@@ -179,7 +179,7 @@ export default function Finance() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+        <Card className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
           <CardHeader className="pb-2 pt-4 px-5">
             <CardTitle className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">Net Savings</CardTitle>
           </CardHeader>
@@ -211,7 +211,7 @@ export default function Finance() {
 
         {/* Type filter tabs */}
         {(records?.length ?? 0) > 0 && (
-          <div className="flex items-center gap-1.5 bg-white border border-border rounded-xl p-1 shadow-sm">
+          <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl p-1 shadow-sm">
             {FILTERS.map(({ key, label, count }) => (
               <button
                 key={key}
@@ -244,7 +244,7 @@ export default function Finance() {
           <Skeleton key={i} className="h-[60px] w-full rounded-xl mb-2" />
         ))
       ) : filteredRecords.length === 0 && (records?.length ?? 0) === 0 ? (
-        <div className="flex flex-col items-center justify-center py-14 text-center border border-dashed border-border rounded-xl bg-white">
+        <div className="flex flex-col items-center justify-center py-14 text-center border border-dashed border-border rounded-xl bg-card">
           <div className="h-16 w-16 rounded-2xl bg-emerald-100 flex items-center justify-center mb-4">
             <Wallet className="h-8 w-8 text-emerald-700" />
           </div>
@@ -257,7 +257,7 @@ export default function Finance() {
           </FinanceFormDialog>
         </div>
       ) : filteredRecords.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-border rounded-xl bg-white">
+        <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-border rounded-xl bg-card">
           <p className="text-[14px] font-semibold text-muted-foreground">
             No {typeFilter} records this month
           </p>
@@ -266,7 +266,7 @@ export default function Finance() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white border border-border rounded-xl overflow-hidden" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+        <div className="bg-card border border-border rounded-xl overflow-hidden" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
           <div className="divide-y divide-border/60">
             {filteredRecords.map((record) => (
               <div key={record.id} className="px-4 py-3.5 flex items-center justify-between hover:bg-muted/30 transition-colors">

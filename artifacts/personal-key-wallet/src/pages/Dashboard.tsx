@@ -153,7 +153,7 @@ export default function Dashboard() {
       {/* Stats + Security Score */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Security score card */}
-        <Card className="lg:col-span-1 bg-white border-border"
+        <Card className="lg:col-span-1 bg-card border-border"
           style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
           <CardContent className="pt-5 flex flex-col items-center gap-3">
             {loadingOv ? (
@@ -176,7 +176,7 @@ export default function Dashboard() {
         {/* 3 stat cards */}
         <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Passwords */}
-          <Card className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+          <Card className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
             <CardHeader className="pb-2 pt-4 px-5 flex flex-row items-center justify-between">
               <CardTitle className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">Passwords</CardTitle>
               <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: "hsl(210,100%,40%,0.08)" }}>
@@ -198,7 +198,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Documents */}
-          <Card className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+          <Card className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
             <CardHeader className="pb-2 pt-4 px-5 flex flex-row items-center justify-between">
               <CardTitle className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">Documents</CardTitle>
               <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(124,58,237,0.08)" }}>
@@ -220,7 +220,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Finance */}
-          <Card className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+          <Card className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
             <CardHeader className="pb-2 pt-4 px-5 flex flex-row items-center justify-between">
               <CardTitle className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">Monthly Balance</CardTitle>
               <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(22,163,74,0.08)" }}>
@@ -246,7 +246,7 @@ export default function Dashboard() {
       {/* Alerts + Quick nav */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
-          <Card className="bg-white border-border h-full" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+          <Card className="bg-card border-border h-full" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
             <CardHeader className="pb-3 pt-5 px-5 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-[15px] font-bold">Security Alerts</CardTitle>
@@ -301,7 +301,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick nav */}
-        <Card className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+        <Card className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
           <CardHeader className="pb-3 pt-5 px-5">
             <CardTitle className="text-[15px] font-bold">Quick Navigation</CardTitle>
           </CardHeader>
@@ -332,7 +332,7 @@ export default function Dashboard() {
 
       {/* Upcoming Tasks / Overdue */}
       {(upcomingTasks.length > 0 || overdueTasks.length > 0) && (
-        <Card className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+        <Card className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
           <CardHeader className="pb-3 pt-5 px-5 flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-[15px] font-bold flex items-center gap-2">

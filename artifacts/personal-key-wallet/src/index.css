@@ -182,6 +182,71 @@
   }
 }
 
+/* ── Dark Mode Theme ── */
+.dark {
+  --background: 220 15% 10%;
+  --foreground: 210 20% 95%;
+
+  --border: 215 15% 20%;
+  --input: 215 15% 22%;
+  --ring: 210 100% 50%;
+
+  --card: 220 15% 12%;
+  --card-foreground: 210 20% 95%;
+  --card-border: 215 15% 18%;
+
+  --popover: 220 15% 12%;
+  --popover-foreground: 210 20% 95%;
+  --popover-border: 215 15% 18%;
+
+  --primary: 210 100% 50%;
+  --primary-foreground: 220 15% 8%;
+
+  --secondary: 215 15% 18%;
+  --secondary-foreground: 210 20% 90%;
+
+  --muted: 215 15% 16%;
+  --muted-foreground: 215 10% 60%;
+
+  --accent: 215 15% 20%;
+  --accent-foreground: 210 100% 60%;
+
+  --destructive: 0 70% 50%;
+  --destructive-foreground: 0 0% 100%;
+
+  --sidebar: 220 15% 9%;
+  --sidebar-foreground: 210 20% 90%;
+  --sidebar-border: 215 15% 15%;
+  --sidebar-primary: 210 100% 50%;
+  --sidebar-primary-foreground: 220 15% 8%;
+  --sidebar-accent: 215 15% 18%;
+  --sidebar-accent-foreground: 210 100% 60%;
+  --sidebar-ring: 210 100% 50%;
+
+  --chart-1: 210 100% 50%;
+  --chart-2: 160 60% 45%;
+  --chart-3: 280 60% 55%;
+  --chart-4: 35 90% 55%;
+  --chart-5: 0 70% 50%;
+
+  --primary-border: hsl(210 100% 50% / 0.3);
+  --secondary-border: hsl(215 15% 18%);
+  --muted-border: hsl(215 15% 16%);
+  --accent-border: hsl(215 15% 20%);
+  --destructive-border: hsl(0 70% 50% / 0.3);
+  --sidebar-primary-border: hsl(210 100% 50% / 0.3);
+  --sidebar-accent-border: hsl(215 15% 20%);
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow: 0 2px 8px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-xl: 0 16px 40px rgba(0,0,0,0.6);
+
+  --elevate-1: rgba(255,255,255,0.03);
+  --elevate-2: rgba(255,255,255,0.06);
+}
+
 @layer utilities {
   input[type="search"]::-webkit-search-cancel-button {
     @apply hidden;

@@ -1,8 +1,14 @@
-const VAULT_URL = 'https://digital-life-vault--eprabhupokhara.replit.app';
+const DEFAULT_VAULT_URL = 'https://digital-life-vault--eprabhupokhara.replit.app';
+let VAULT_URL = DEFAULT_VAULT_URL;
 
 // ── DOM helpers ───────────────────────────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
 const msg = (data) => new Promise((res) => chrome.runtime.sendMessage(data, res));
+
+async function loadApiBase() {
+  const res = await msg({ type: 'GET_API_BASE' });
+  VAULT_URL = res?.apiBase || DEFAULT_VAULT_URL;
+}
 
 function showView(name) {
   ['view-auth','view-totp','view-main'].forEach(v =>
@@ -33,6 +39,9 @@ let searchQ = '';
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
+  // Load configurable API base
+  await loadApiBase();
+
   // Set vault links
   $('link-vault-auth').href = VAULT_URL;
   $('link-vault-main').href = VAULT_URL + '/vault/passwords';
@@ -256,11 +265,26 @@ $('btn-add').addEventListener('click', () => {
 });
 
 // ── Copy ──────────────────────────────────────────────────────────────────────
+let _lastCopiedText = '';
+let _clearClipboardTimer = null;
+
 async function doCopy(text, label) {
   try {
     await navigator.clipboard.writeText(text);
+    _lastCopiedText = text;
     showToast(`✓ ${label} copied — clears in 30s`);
-    setTimeout(() => navigator.clipboard.writeText('').catch(() => {}), 30000);
+
+    // Cancel any pending clear, then schedule new one
+    if (_clearClipboardTimer) clearTimeout(_clearClipboardTimer);
+    _clearClipboardTimer = setTimeout(async () => {
+      try {
+        const current = await navigator.clipboard.readText();
+        if (current === _lastCopiedText) {
+          await navigator.clipboard.writeText('');
+        }
+      } catch { /* ignore — permission may have been revoked */ }
+      _lastCopiedText = '';
+    }, 30000);
   } catch {
     showToast('Could not copy to clipboard', true);
   }

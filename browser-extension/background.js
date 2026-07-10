@@ -1,4 +1,10 @@
-const API_BASE = 'https://digital-life-vault--eprabhupokhara.replit.app';
+const DEFAULT_API_BASE = 'https://digital-life-vault--eprabhupokhara.replit.app';
+
+// ── Config helpers ───────────────────────────────────────────────────────────
+async function getApiBase() {
+  const { kw_api_base } = await chrome.storage.local.get('kw_api_base');
+  return kw_api_base || DEFAULT_API_BASE;
+}
 
 // ── Storage helpers ───────────────────────────────────────────────────────────
 async function getAuth() {
@@ -11,8 +17,8 @@ async function clearAuth() {
   await chrome.storage.local.remove(['kw_token', 'kw_user', 'kw_pending_email']);
 }
 
-// ── JWT decode (client-side, no signature verify needed here) ─────────────────
-function decodeJWT(token) {
+// ── JWT payload decode (client-side, no signature verification — server handles that) ──
+function decodeJWTPayload(token) {
   try {
     const payload = atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'));
     return JSON.parse(payload);
@@ -21,12 +27,15 @@ function decodeJWT(token) {
 
 // ── API helper ────────────────────────────────────────────────────────────────
 async function api(path, opts = {}) {
-  const { kw_token } = await chrome.storage.local.get('kw_token');
+  const [{ kw_token }, apiBase] = await Promise.all([
+    chrome.storage.local.get('kw_token'),
+    getApiBase(),
+  ]);
   const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
   if (kw_token) headers['Authorization'] = `Bearer ${kw_token}`;
 
   try {
-    const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
+    const res = await fetch(`${apiBase}${path}`, { ...opts, headers });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return { error: data.error || data.message || `HTTP ${res.status}` };
     return data;
@@ -47,7 +56,7 @@ async function handle(msg) {
     case 'GET_AUTH_STATE': {
       const { kw_token, kw_user } = await getAuth();
       if (!kw_token) return { isLoggedIn: false };
-      const payload = decodeJWT(kw_token);
+      const payload = decodeJWTPayload(kw_token);
       const exp = payload?.exp ? payload.exp * 1000 : Infinity;
       if (Date.now() > exp) { await clearAuth(); return { isLoggedIn: false }; }
       return { isLoggedIn: true, userName: kw_user?.name, userEmail: kw_user?.email };
@@ -60,7 +69,7 @@ async function handle(msg) {
       });
       if (res.error) return res;
       if (res.token) {
-        const payload = decodeJWT(res.token);
+        const payload = decodeJWTPayload(res.token);
         await setAuth(res.token, { email: msg.email, name: payload?.name });
       }
       if (res.requires2FA) {
@@ -77,7 +86,7 @@ async function handle(msg) {
       if (res.error) return res;
       if (res.token) {
         const { kw_pending_email } = await chrome.storage.local.get('kw_pending_email');
-        const payload = decodeJWT(res.token);
+        const payload = decodeJWTPayload(res.token);
         await setAuth(res.token, { email: kw_pending_email || '', name: payload?.name });
         await chrome.storage.local.remove('kw_pending_email');
       }
@@ -163,6 +172,19 @@ async function handle(msg) {
         type: 'SAVE_PASSWORD',
         data: { title: msg.title, username: msg.username, password: msg.password, url: msg.url },
       });
+    }
+
+    case 'SET_API_BASE': {
+      if (msg.url) {
+        await chrome.storage.local.set({ kw_api_base: msg.url });
+        return { success: true };
+      }
+      return { error: 'URL is required' };
+    }
+
+    case 'GET_API_BASE': {
+      const base = await getApiBase();
+      return { apiBase: base };
     }
 
     default:

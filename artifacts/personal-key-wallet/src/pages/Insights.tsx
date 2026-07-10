@@ -304,7 +304,7 @@ export default function Insights() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {SECURITY_TIPS.slice(0, 3).map(({ Icon, title, color, tips }) => (
-            <Card key={title} className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+            <Card key={title} className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
               <CardContent className="p-5">
                 <div className="flex items-center gap-2.5 mb-3">
                   <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${color}`}>
