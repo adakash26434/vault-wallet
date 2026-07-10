@@ -155,7 +155,7 @@ export default function Extension() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
         {/* Browser Extension */}
-        <Card className="bg-white border-border" style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.08)" }}>
+        <Card className="bg-card border-border" style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.08)" }}>
           <CardHeader className="pb-3 pt-5 px-5">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -232,7 +232,7 @@ export default function Extension() {
         </Card>
 
         {/* PWA */}
-        <Card className="bg-white border-border" style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.08)" }}>
+        <Card className="bg-card border-border" style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.08)" }}>
           <CardHeader className="pb-3 pt-5 px-5">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -316,7 +316,7 @@ export default function Extension() {
       </div>
 
       {/* ── Publish to stores ── */}
-      <Card className="bg-white border-border" style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.08)" }}>
+      <Card className="bg-card border-border" style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.08)" }}>
         <CardHeader className="pb-2 pt-5 px-5">
           <div className="flex items-center gap-2.5">
             <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -370,7 +370,7 @@ export default function Extension() {
       {/* Guide cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {GUIDES.map(({ Icon, title, badge, badgeColor, iconColor, tips }) => (
-          <Card key={title} className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+          <Card key={title} className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
             <CardHeader className="pb-3 pt-5 px-5">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -399,7 +399,7 @@ export default function Extension() {
       </div>
 
       {/* Emergency helplines */}
-      <Card className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+      <Card className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
         <CardHeader className="pb-3 pt-5 px-5">
           <div className="flex items-center gap-2.5">
             <div className="h-9 w-9 rounded-xl bg-red-100 flex items-center justify-center">

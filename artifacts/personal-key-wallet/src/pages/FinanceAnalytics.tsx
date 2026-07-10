@@ -33,7 +33,7 @@ function StatCard({
   color: string; bg: string; sub?: string;
 }) {
   return (
-    <Card className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+    <Card className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-3">
           <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
@@ -172,7 +172,7 @@ export default function FinanceAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
         {/* Pie chart */}
-        <Card className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+        <Card className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
           <CardHeader className="pb-2 pt-5 px-5">
             <CardTitle className="text-[15px] font-bold">Expense Breakdown</CardTitle>
             <p className="text-[12.5px] text-muted-foreground">Where your money went this month</p>
@@ -220,7 +220,7 @@ export default function FinanceAnalytics() {
         </Card>
 
         {/* Bar chart */}
-        <Card className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+        <Card className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
           <CardHeader className="pb-2 pt-5 px-5">
             <CardTitle className="text-[15px] font-bold">Top Categories</CardTitle>
             <p className="text-[12.5px] text-muted-foreground">Highest spending categories</p>
@@ -270,7 +270,7 @@ export default function FinanceAnalytics() {
 
       {/* Income vs Expense comparison */}
       {!isLoading && summary && (summary.totalIncome > 0 || summary.totalExpenses > 0) && (
-        <Card className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+        <Card className="bg-card border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
           <CardHeader className="pb-2 pt-5 px-5">
             <CardTitle className="text-[15px] font-bold">Income vs Expenses</CardTitle>
             <p className="text-[12.5px] text-muted-foreground">Monthly comparison</p>
