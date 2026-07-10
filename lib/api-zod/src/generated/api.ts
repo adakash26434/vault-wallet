@@ -41,7 +41,8 @@ export const VerifyTotpSetupResponse = zod.object({
   "dateOfBirth": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "address": zod.string().nullish(),
-  "avatarColor": zod.string().nullish()
+  "avatarColor": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
 })
 })
 
@@ -79,7 +80,8 @@ export const VerifyTotpResponse = zod.object({
   "dateOfBirth": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "address": zod.string().nullish(),
-  "avatarColor": zod.string().nullish()
+  "avatarColor": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
 })
 })
 
@@ -96,7 +98,8 @@ export const GetMeResponse = zod.object({
   "dateOfBirth": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "address": zod.string().nullish(),
-  "avatarColor": zod.string().nullish()
+  "avatarColor": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
 })
 
 
@@ -109,7 +112,8 @@ export const UpdateProfileBody = zod.object({
   "dateOfBirth": zod.string().optional(),
   "bio": zod.string().optional(),
   "address": zod.string().optional(),
-  "avatarColor": zod.string().optional()
+  "avatarColor": zod.string().optional(),
+  "avatarUrl": zod.string().optional()
 })
 
 export const UpdateProfileResponse = zod.object({
@@ -121,7 +125,8 @@ export const UpdateProfileResponse = zod.object({
   "dateOfBirth": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "address": zod.string().nullish(),
-  "avatarColor": zod.string().nullish()
+  "avatarColor": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
 })
 
 
@@ -589,5 +594,75 @@ export const GetDashboardAlertsResponseItem = zod.object({
   "createdAt": zod.string()
 })
 export const GetDashboardAlertsResponse = zod.array(GetDashboardAlertsResponseItem)
+
+
+/**
+ * @summary List all tasks for current user
+ */
+export const ListTasksResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.enum(['electricity', 'water', 'mobile', 'internet', 'loan', 'tax', 'insurance', 'vehicle', 'appointment', 'travel', 'personal']),
+  "dueDate": zod.string(),
+  "dueTime": zod.string().nullish(),
+  "priority": zod.enum(['high', 'medium', 'low']),
+  "isCompleted": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListTasksResponse = zod.array(ListTasksResponseItem)
+
+
+/**
+ * @summary Create a new task or reminder
+ */
+export const CreateTaskBody = zod.object({
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "category": zod.enum(['electricity', 'water', 'mobile', 'internet', 'loan', 'tax', 'insurance', 'vehicle', 'appointment', 'travel', 'personal']).optional(),
+  "dueDate": zod.string(),
+  "dueTime": zod.string().optional(),
+  "priority": zod.enum(['high', 'medium', 'low']).optional()
+})
+
+
+/**
+ * @summary Update a task (edit or mark complete)
+ */
+export const UpdateTaskParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateTaskBody = zod.object({
+  "title": zod.string().optional(),
+  "description": zod.string().optional(),
+  "category": zod.enum(['electricity', 'water', 'mobile', 'internet', 'loan', 'tax', 'insurance', 'vehicle', 'appointment', 'travel', 'personal']).optional(),
+  "dueDate": zod.string().optional(),
+  "dueTime": zod.string().optional(),
+  "priority": zod.enum(['high', 'medium', 'low']).optional(),
+  "isCompleted": zod.boolean().optional()
+})
+
+export const UpdateTaskResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.enum(['electricity', 'water', 'mobile', 'internet', 'loan', 'tax', 'insurance', 'vehicle', 'appointment', 'travel', 'personal']),
+  "dueDate": zod.string(),
+  "dueTime": zod.string().nullish(),
+  "priority": zod.enum(['high', 'medium', 'low']),
+  "isCompleted": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a task
+ */
+export const DeleteTaskParams = zod.object({
+  "id": zod.coerce.number()
+})
 
 

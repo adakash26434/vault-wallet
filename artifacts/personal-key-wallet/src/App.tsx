@@ -76,6 +76,7 @@ function Router() {
               <Route path="/extension" component={() => <ProtectedRoute component={Extension} />} />
               <Route path="/profile" component={() => <ProtectedRoute component={Profile} />} />
               <Route path="/cv" component={() => <ProtectedRoute component={CVBuilder} />} />
+              <Route path="/tasks" component={() => <ProtectedRoute component={Tasks} />} />
               <Route component={NotFound} />
             </Switch>
           </Layout>

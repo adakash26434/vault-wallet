@@ -276,6 +276,8 @@ export interface AuthUser {
   address?: string | null;
   /** @nullable */
   avatarColor?: string | null;
+  /** @nullable */
+  avatarUrl?: string | null;
 }
 
 export interface AuthSessionResponse {
@@ -290,6 +292,7 @@ export interface ProfileUpdateBody {
   bio?: string;
   address?: string;
   avatarColor?: string;
+  avatarUrl?: string;
 }
 
 export interface ChangePasswordRequest {
@@ -356,6 +359,118 @@ export interface CvProfileInput {
   skills?: string;
   languages?: string;
   templateColor?: string;
+}
+
+export type TaskEntryCategory = typeof TaskEntryCategory[keyof typeof TaskEntryCategory];
+
+
+export const TaskEntryCategory = {
+  electricity: 'electricity',
+  water: 'water',
+  mobile: 'mobile',
+  internet: 'internet',
+  loan: 'loan',
+  tax: 'tax',
+  insurance: 'insurance',
+  vehicle: 'vehicle',
+  appointment: 'appointment',
+  travel: 'travel',
+  personal: 'personal',
+} as const;
+
+export type TaskEntryPriority = typeof TaskEntryPriority[keyof typeof TaskEntryPriority];
+
+
+export const TaskEntryPriority = {
+  high: 'high',
+  medium: 'medium',
+  low: 'low',
+} as const;
+
+export interface TaskEntry {
+  id: number;
+  title: string;
+  /** @nullable */
+  description?: string | null;
+  category: TaskEntryCategory;
+  dueDate: string;
+  /** @nullable */
+  dueTime?: string | null;
+  priority: TaskEntryPriority;
+  isCompleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TaskInputCategory = typeof TaskInputCategory[keyof typeof TaskInputCategory];
+
+
+export const TaskInputCategory = {
+  electricity: 'electricity',
+  water: 'water',
+  mobile: 'mobile',
+  internet: 'internet',
+  loan: 'loan',
+  tax: 'tax',
+  insurance: 'insurance',
+  vehicle: 'vehicle',
+  appointment: 'appointment',
+  travel: 'travel',
+  personal: 'personal',
+} as const;
+
+export type TaskInputPriority = typeof TaskInputPriority[keyof typeof TaskInputPriority];
+
+
+export const TaskInputPriority = {
+  high: 'high',
+  medium: 'medium',
+  low: 'low',
+} as const;
+
+export interface TaskInput {
+  title: string;
+  description?: string;
+  category?: TaskInputCategory;
+  dueDate: string;
+  dueTime?: string;
+  priority?: TaskInputPriority;
+}
+
+export type TaskUpdateCategory = typeof TaskUpdateCategory[keyof typeof TaskUpdateCategory];
+
+
+export const TaskUpdateCategory = {
+  electricity: 'electricity',
+  water: 'water',
+  mobile: 'mobile',
+  internet: 'internet',
+  loan: 'loan',
+  tax: 'tax',
+  insurance: 'insurance',
+  vehicle: 'vehicle',
+  appointment: 'appointment',
+  travel: 'travel',
+  personal: 'personal',
+} as const;
+
+export type TaskUpdatePriority = typeof TaskUpdatePriority[keyof typeof TaskUpdatePriority];
+
+
+export const TaskUpdatePriority = {
+  high: 'high',
+  medium: 'medium',
+  low: 'low',
+} as const;
+
+export interface TaskUpdate {
+  title?: string;
+  description?: string;
+  category?: TaskUpdateCategory;
+  dueDate?: string;
+  dueTime?: string;
+  priority?: TaskUpdatePriority;
+  isCompleted?: boolean;
 }
 
 export type ListPasswordsParams = {

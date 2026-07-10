@@ -1,16 +1,21 @@
 import React from "react";
-import { useGetDashboardOverview, useGetDashboardAlerts } from "@workspace/api-client-react";
+import {
+  useGetDashboardOverview, useGetDashboardAlerts, useListTasks,
+} from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   KeyRound, FileText, AlertTriangle, Wallet, ArrowRight,
   ShieldCheck, ShieldAlert, AlertCircle, Plus, TrendingUp,
-  ChevronRight,
+  ChevronRight, BellRing, Zap, Droplets, Smartphone, Wifi,
+  Banknote, Receipt, Shield, Car, Stethoscope, Plane, User,
+  Clock, CheckCircle2,
 } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 function greeting() {
   const h = new Date().getHours();
@@ -44,10 +49,41 @@ function SecurityRing({ score }: { score: number }) {
   );
 }
 
+const CATEGORY_META: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
+  electricity: { icon: Zap,        color: "text-yellow-600", bg: "bg-yellow-100", label: "NEA" },
+  water:       { icon: Droplets,   color: "text-blue-500",   bg: "bg-blue-100",   label: "Khanepani" },
+  mobile:      { icon: Smartphone, color: "text-violet-600", bg: "bg-violet-100", label: "Mobile" },
+  internet:    { icon: Wifi,       color: "text-sky-600",    bg: "bg-sky-100",    label: "Internet" },
+  loan:        { icon: Banknote,   color: "text-red-600",    bg: "bg-red-100",    label: "Loan/EMI" },
+  tax:         { icon: Receipt,    color: "text-orange-600", bg: "bg-orange-100", label: "Tax/IRD" },
+  insurance:   { icon: Shield,     color: "text-emerald-600",bg: "bg-emerald-100",label: "Insurance" },
+  vehicle:     { icon: Car,        color: "text-amber-700",  bg: "bg-amber-100",  label: "Vehicle" },
+  appointment: { icon: Stethoscope,color: "text-rose-600",   bg: "bg-rose-100",   label: "Appt" },
+  travel:      { icon: Plane,      color: "text-indigo-600", bg: "bg-indigo-100", label: "Travel" },
+  personal:    { icon: User,       color: "text-slate-600",  bg: "bg-slate-100",  label: "Personal" },
+};
+
+interface TaskEntry {
+  id: number;
+  title: string;
+  category: string;
+  dueDate: string;
+  dueTime?: string | null;
+  priority: string;
+  isCompleted: boolean;
+}
+
+function daysDiff(dateStr: string) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const due = new Date(dateStr + "T00:00:00");
+  return Math.round((due.getTime() - today.getTime()) / 86400000);
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { data: overview, isLoading: loadingOv } = useGetDashboardOverview();
   const { data: alerts, isLoading: loadingAl } = useGetDashboardAlerts();
+  const { data: allTasks } = useListTasks();
 
   const healthScore = React.useMemo(() => {
     if (!overview) return 100;
@@ -62,6 +98,25 @@ export default function Dashboard() {
   const healthColor = healthScore >= 80 ? "text-emerald-600" : healthScore >= 50 ? "text-amber-600" : "text-red-600";
 
   const firstName = user?.name?.split(" ")[0] ?? user?.email?.split("@")[0] ?? "there";
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const upcomingTasks = React.useMemo(() => {
+    if (!allTasks) return [];
+    const tasks = allTasks as TaskEntry[];
+    const sevenDaysLater = new Date();
+    sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+    const maxDate = sevenDaysLater.toISOString().slice(0, 10);
+    return tasks
+      .filter((t) => !t.isCompleted && t.dueDate <= maxDate)
+      .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+      .slice(0, 5);
+  }, [allTasks]);
+
+  const overdueTasks = React.useMemo(() => {
+    if (!allTasks) return [];
+    return (allTasks as TaskEntry[]).filter((t) => !t.isCompleted && t.dueDate < today);
+  }, [allTasks, today]);
 
   return (
     <div className="space-y-7">
@@ -188,7 +243,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Alerts section */}
+      {/* Alerts + Quick nav */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
           <Card className="bg-white border-border h-full" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
@@ -255,6 +310,7 @@ export default function Dashboard() {
               { href: "/vault/passwords", label: "Password Vault", desc: `${overview?.totalPasswords ?? 0} entries`, Icon: KeyRound, color: "text-blue-600", bg: "bg-blue-100" },
               { href: "/vault/documents", label: "Documents", desc: `${overview?.totalDocuments ?? 0} documents`, Icon: FileText, color: "text-violet-600", bg: "bg-violet-100" },
               { href: "/finance", label: "Finance Tracker", desc: "Income & expenses", Icon: Wallet, color: "text-emerald-600", bg: "bg-emerald-100" },
+              { href: "/tasks", label: "Reminders", desc: `${upcomingTasks.length} upcoming`, Icon: BellRing, color: "text-amber-600", bg: "bg-amber-100" },
               { href: "/insights", label: "Security Insights", desc: `Score: ${healthScore}/100`, Icon: ShieldCheck, color: healthColor, bg: healthScore >= 80 ? "bg-emerald-100" : healthScore >= 50 ? "bg-amber-100" : "bg-red-100" },
             ].map(({ href, label, desc, Icon, color, bg }) => (
               <Link key={href} href={href}>
@@ -273,6 +329,91 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Upcoming Tasks / Overdue */}
+      {(upcomingTasks.length > 0 || overdueTasks.length > 0) && (
+        <Card className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+          <CardHeader className="pb-3 pt-5 px-5 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-[15px] font-bold flex items-center gap-2">
+                <BellRing className="h-4 w-4 text-amber-500" />
+                Upcoming Reminders
+              </CardTitle>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5">Next 7 days · Bill, EMI, insurance, appointments</p>
+            </div>
+            <Link href="/tasks">
+              <Button variant="ghost" size="sm" className="text-[12.5px] gap-1 h-8">
+                All <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent className="px-5 pb-5">
+            <div className="space-y-2">
+              {/* Overdue first */}
+              {overdueTasks.slice(0, 2).map((task) => {
+                const meta = CATEGORY_META[task.category] ?? CATEGORY_META.personal;
+                const Icon = meta.icon;
+                const diff = daysDiff(task.dueDate);
+                return (
+                  <div key={task.id} className="flex items-center gap-3 p-3 rounded-lg border bg-red-50 border-red-200">
+                    <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", meta.bg)}>
+                      <Icon className={cn("h-4 w-4", meta.color)} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-foreground truncate">{task.title}</p>
+                      <p className="text-[11.5px] text-red-600 font-medium flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        {Math.abs(diff)} day{Math.abs(diff) !== 1 ? "s" : ""} overdue
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-[10.5px] border-red-200 text-red-700 bg-red-50 shrink-0">Overdue</Badge>
+                  </div>
+                );
+              })}
+              {/* Upcoming */}
+              {upcomingTasks.slice(0, 4 - Math.min(overdueTasks.length, 2)).map((task) => {
+                const meta = CATEGORY_META[task.category] ?? CATEGORY_META.personal;
+                const Icon = meta.icon;
+                const diff = daysDiff(task.dueDate);
+                const isToday = diff === 0;
+                const isTomorrow = diff === 1;
+                const dateLabel = isToday ? "Today" : isTomorrow ? "Tomorrow" : `${diff}d`;
+                return (
+                  <div
+                    key={task.id}
+                    className={cn(
+                      "flex items-center gap-3 p-3 rounded-lg border",
+                      isToday ? "bg-amber-50 border-amber-200" : "bg-muted/20 border-border"
+                    )}
+                  >
+                    <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", meta.bg)}>
+                      <Icon className={cn("h-4 w-4", meta.color)} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-foreground truncate">{task.title}</p>
+                      <p className={cn("text-[11.5px] font-medium flex items-center gap-1", isToday ? "text-amber-600" : "text-muted-foreground")}>
+                        {isToday ? <Clock className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
+                        {dateLabel} · {meta.label}
+                      </p>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-[10.5px] shrink-0",
+                        task.priority === "high" ? "border-red-200 text-red-600 bg-red-50" :
+                        task.priority === "medium" ? "border-amber-200 text-amber-600 bg-amber-50" :
+                        "border-slate-200 text-slate-500 bg-slate-50"
+                      )}
+                    >
+                      {task.priority}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

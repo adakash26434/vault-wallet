@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useUpdateProfile, useChangePassword,
@@ -18,32 +18,41 @@ import {
   User, Mail, Phone, Calendar, MapPin, Edit3, Save, X, Lock,
   ShieldCheck, KeyRound, FileText, Wallet, Eye, EyeOff,
   Monitor, Smartphone, Globe, LogOut, Trash2, AlertCircle,
+  Camera, Upload,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 
 const AVATAR_COLORS = [
   "#0078D4", "#107C10", "#C50F1F", "#7719AA", "#038387",
   "#CA5010", "#8764B8", "#E74856", "#00B294", "#FF8C00",
 ];
 
-function AvatarDisplay({ name, email, color, size = "lg" }: { name?: string | null; email?: string | null; color?: string | null; size?: "sm" | "lg" }) {
-  const initials = name
-    ? name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-    : email?.[0]?.toUpperCase() ?? "U";
-  const bg = color || "#0078D4";
-  const dim = size === "lg" ? 80 : 40;
-  const font = size === "lg" ? 28 : 15;
-  return (
-    <div
-      className="rounded-full flex items-center justify-center text-white font-bold shrink-0 select-none"
-      style={{ width: dim, height: dim, background: bg, fontSize: font }}
-    >
-      {initials}
-    </div>
-  );
+function resizeImageToBase64(file: File, maxSize = 200): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const size = Math.min(img.width, img.height);
+        canvas.width = maxSize;
+        canvas.height = maxSize;
+        const ctx = canvas.getContext("2d")!;
+        const sx = (img.width - size) / 2;
+        const sy = (img.height - size) / 2;
+        ctx.drawImage(img, sx, sy, size, size, 0, 0, maxSize, maxSize);
+        resolve(canvas.toDataURL("image/jpeg", 0.75));
+      };
+      img.onerror = reject;
+      img.src = e.target!.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 function DeviceIcon({ device }: { device: string }) {
@@ -70,6 +79,7 @@ export default function Profile() {
   const { user, login, token } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
@@ -79,7 +89,9 @@ export default function Profile() {
     address: user?.address ?? "",
     bio: user?.bio ?? "",
     avatarColor: user?.avatarColor ?? "#0078D4",
+    avatarUrl: user?.avatarUrl ?? "",
   });
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   const [pwForm, setPwForm] = useState({ currentPassword: "", newPassword: "", confirm: "" });
   const [showPw, setShowPw] = useState(false);
@@ -101,13 +113,57 @@ export default function Profile() {
       address: user?.address ?? "",
       bio: user?.bio ?? "",
       avatarColor: user?.avatarColor ?? "#0078D4",
+      avatarUrl: user?.avatarUrl ?? "",
     });
     setEditing(true);
   }
 
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Please choose an image under 5MB.", variant: "destructive" });
+      return;
+    }
+    setPhotoUploading(true);
+    try {
+      const base64 = await resizeImageToBase64(file, 200);
+      updateProfile.mutate(
+        { data: { avatarUrl: base64 } },
+        {
+          onSuccess: (updated) => {
+            if (token) login(token, { ...user!, ...updated });
+            toast({ title: "Profile photo updated!" });
+            setForm((f) => ({ ...f, avatarUrl: base64 }));
+          },
+          onError: () => toast({ title: "Failed to upload photo", variant: "destructive" }),
+          onSettled: () => setPhotoUploading(false),
+        }
+      );
+    } catch {
+      toast({ title: "Failed to process image", variant: "destructive" });
+      setPhotoUploading(false);
+    }
+    e.target.value = "";
+  }
+
+  async function handleRemovePhoto() {
+    updateProfile.mutate(
+      { data: { avatarUrl: "" } },
+      {
+        onSuccess: (updated) => {
+          if (token) login(token, { ...user!, ...updated, avatarUrl: null });
+          setForm((f) => ({ ...f, avatarUrl: "" }));
+          toast({ title: "Photo removed" });
+        },
+        onError: () => toast({ title: "Failed to remove photo", variant: "destructive" }),
+      }
+    );
+  }
+
   async function handleSave() {
     updateProfile.mutate(
-      { data: { ...form, dateOfBirth: form.dateOfBirth || undefined } },
+      { data: { ...form, dateOfBirth: form.dateOfBirth || undefined, avatarUrl: form.avatarUrl || undefined } },
       {
         onSuccess: (updated) => {
           if (token) login(token, { ...user!, ...updated });
@@ -166,6 +222,13 @@ export default function Profile() {
     });
   }
 
+  const displayAvatarUrl = editing ? form.avatarUrl : user?.avatarUrl;
+  const displayColor = editing ? form.avatarColor : (user?.avatarColor ?? "#0078D4");
+  const displayName = editing ? form.name : user?.name;
+  const initials = displayName
+    ? displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
+    : user?.email?.[0]?.toUpperCase() ?? "U";
+
   const otherSessions = sessions?.filter((s) => !s.isCurrent) ?? [];
 
   return (
@@ -179,20 +242,74 @@ export default function Profile() {
       {/* Profile card */}
       <Card className="bg-white border-border" style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.08)" }}>
         <CardContent className="pt-6 pb-6 px-6">
-          <div className="flex items-start gap-5">
-            <AvatarDisplay name={editing ? form.name : user?.name} email={user?.email} color={editing ? form.avatarColor : user?.avatarColor} />
+          <div className="flex items-start gap-5 flex-wrap sm:flex-nowrap">
+            {/* Avatar with upload overlay */}
+            <div className="relative shrink-0 group">
+              {displayAvatarUrl ? (
+                <img
+                  src={displayAvatarUrl}
+                  alt="Profile"
+                  className="h-20 w-20 rounded-full object-cover border-2 border-border"
+                />
+              ) : (
+                <div
+                  className="h-20 w-20 rounded-full flex items-center justify-center text-white font-bold select-none text-[28px] border-2 border-transparent"
+                  style={{ background: displayColor }}
+                >
+                  {initials}
+                </div>
+              )}
+              {/* Upload overlay */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={photoUploading}
+                className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Change profile photo"
+              >
+                {photoUploading
+                  ? <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <Camera className="h-5 w-5 text-white" />
+                }
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoChange}
+              />
+              {/* Remove photo button */}
+              {displayAvatarUrl && (
+                <button
+                  onClick={handleRemovePhoto}
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-white border border-border flex items-center justify-center shadow-sm hover:bg-destructive hover:text-white hover:border-destructive transition-colors"
+                  title="Remove photo"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <h2 className="text-[18px] font-bold text-foreground truncate">
                     {user?.name || user?.email?.split("@")[0] || "User"}
                   </h2>
                   <p className="text-[13px] text-muted-foreground">{user?.email}</p>
-                  <div className="flex items-center gap-2 mt-1.5">
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                     <Badge className="bg-emerald-100 text-emerald-700 text-[10.5px]">
                       <ShieldCheck className="h-3 w-3 mr-1" />
                       2FA Active
                     </Badge>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-primary transition-colors"
+                      disabled={photoUploading}
+                    >
+                      <Upload className="h-3 w-3" />
+                      {displayAvatarUrl ? "Change photo" : "Upload photo"}
+                    </button>
                   </div>
                 </div>
                 {!editing ? (
@@ -218,7 +335,7 @@ export default function Profile() {
 
           {editing && (
             <div className="mt-5 pt-4 border-t border-border/60">
-              <Label className="text-[12.5px] font-semibold mb-2 block">Avatar Color</Label>
+              <Label className="text-[12.5px] font-semibold mb-2 block">Avatar Color (used when no photo)</Label>
               <div className="flex gap-2.5 flex-wrap">
                 {AVATAR_COLORS.map((c) => (
                   <button
@@ -427,13 +544,17 @@ export default function Profile() {
               {sessions.map((s) => (
                 <div
                   key={s.id}
-                  className={`flex items-center gap-4 px-4 py-3 rounded-xl border transition-all ${
+                  className={cn(
+                    "flex items-center gap-4 px-4 py-3 rounded-xl border transition-all",
                     s.isCurrent
                       ? "bg-emerald-50 border-emerald-200"
                       : "bg-muted/20 border-border hover:border-border/80"
-                  }`}
+                  )}
                 >
-                  <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${s.isCurrent ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                  <div className={cn(
+                    "h-9 w-9 rounded-lg flex items-center justify-center shrink-0",
+                    s.isCurrent ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
+                  )}>
                     <DeviceIcon device={s.device} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -478,7 +599,7 @@ export default function Profile() {
         ].map(({ icon: Icon, label, sublabel, color }) => (
           <Card key={label} className="bg-white border-border" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
             <CardContent className="pt-4 pb-4 px-4 flex items-center gap-3">
-              <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
+              <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center shrink-0", color)}>
                 <Icon className="h-4 w-4" />
               </div>
               <div className="min-w-0">

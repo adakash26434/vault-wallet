@@ -3,13 +3,13 @@ import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, KeyRound, FileText, Wallet, BarChart3,
   Lightbulb, ShieldCheck, LogOut, ChevronRight, User,
-  Bell, Search, Menu, BookOpen, Download, X, FileSpreadsheet,
+  Bell, Search, Menu, BookOpen, Download, X, FileSpreadsheet, BellRing,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -45,6 +45,12 @@ const navSections = [
     ],
   },
   {
+    label: "Reminders",
+    items: [
+      { href: "/tasks", label: "Tasks & Reminders", icon: BellRing },
+    ],
+  },
+  {
     label: "Tools",
     items: [
       { href: "/insights", label: "Insights", icon: Lightbulb },
@@ -63,6 +69,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/extension": "Extension & App",
   "/profile": "My Profile",
   "/cv": "CV Builder",
+  "/tasks": "Reminders",
 };
 
 function NavList({ location, onClick }: { location: string; onClick?: () => void }) {
@@ -183,6 +190,7 @@ export default function Layout({ children }: LayoutProps) {
           <DropdownMenuTrigger asChild>
             <button className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-muted transition-colors text-left">
               <Avatar className="h-7 w-7 shrink-0">
+                {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name ?? "avatar"} className="object-cover" />}
                 <AvatarFallback
                   className="text-[11px] font-semibold"
                   style={{ background: "hsl(var(--primary) / 0.12)", color: "hsl(var(--primary))" }}
@@ -358,6 +366,7 @@ export default function Layout({ children }: LayoutProps) {
           {/* Avatar */}
           <div className="hidden sm:flex items-center gap-2">
             <Avatar className="h-7 w-7">
+              {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name ?? "avatar"} className="object-cover" />}
               <AvatarFallback
                 className="text-[11px] font-semibold"
                 style={{ background: "hsl(var(--primary) / 0.12)", color: "hsl(var(--primary))" }}

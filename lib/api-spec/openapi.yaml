@@ -630,6 +630,98 @@ paths:
                 items:
                   $ref: "#/components/schemas/Alert"
 
+  /tasks:
+    get:
+      operationId: listTasks
+      tags: [tasks]
+      summary: List all tasks for current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TaskEntry"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Create a new task or reminder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskEntry"
+        "400":
+          description: Invalid body
+        "401":
+          description: Unauthorized
+
+  /tasks/{id}:
+    patch:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Update a task (edit or mark complete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdate"
+      responses:
+        "200":
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskEntry"
+        "400":
+          description: Invalid body
+        "401":
+          description: Unauthorized
+        "404":
+          description: Task not found
+    delete:
+      operationId: deleteTask
+      tags: [tasks]
+      summary: Delete a task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Task deleted
+        "401":
+          description: Unauthorized
+
 components:
   schemas:
     HealthStatus:
@@ -1021,6 +1113,8 @@ components:
           type: string
         avatarColor:
           type: string
+        avatarUrl:
+          type: string
 
     ChangePasswordRequest:
       type: object
@@ -1095,6 +1189,72 @@ components:
         languages: { type: string }
         templateColor: { type: string }
 
+    TaskEntry:
+      type: object
+      required: [id, title, category, dueDate, priority, isCompleted, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: string
+          enum: [electricity, water, mobile, internet, loan, tax, insurance, vehicle, appointment, travel, personal]
+        dueDate:
+          type: string
+        dueTime:
+          type: ["string", "null"]
+        priority:
+          type: string
+          enum: [high, medium, low]
+        isCompleted:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    TaskInput:
+      type: object
+      required: [title, dueDate]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [electricity, water, mobile, internet, loan, tax, insurance, vehicle, appointment, travel, personal]
+        dueDate:
+          type: string
+        dueTime:
+          type: string
+        priority:
+          type: string
+          enum: [high, medium, low]
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [electricity, water, mobile, internet, loan, tax, insurance, vehicle, appointment, travel, personal]
+        dueDate:
+          type: string
+        dueTime:
+          type: string
+        priority:
+          type: string
+          enum: [high, medium, low]
+        isCompleted:
+          type: boolean
+
     AuthUser:
       type: object
       required: [id, email, totpEnabled]
@@ -1116,6 +1276,8 @@ components:
         address:
           type: ["string", "null"]
         avatarColor:
+          type: ["string", "null"]
+        avatarUrl:
           type: ["string", "null"]
 
   securitySchemes:

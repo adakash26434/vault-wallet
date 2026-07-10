@@ -13,4 +13,5 @@ export interface ProfileUpdateBody {
   bio?: string;
   address?: string;
   avatarColor?: string;
+  avatarUrl?: string;
 }

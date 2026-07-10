@@ -22,4 +22,6 @@ export interface AuthUser {
   address?: string | null;
   /** @nullable */
   avatarColor?: string | null;
+  /** @nullable */
+  avatarUrl?: string | null;
 }
