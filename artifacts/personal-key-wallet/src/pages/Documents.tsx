@@ -207,7 +207,7 @@ export default function Documents() {
             ))}
           </div>
         ) : filtered.length === 0 && documents?.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-border rounded-xl bg-white">
+          <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-border rounded-xl bg-card">
             <div className="h-16 w-16 rounded-2xl bg-violet-100 flex items-center justify-center mb-4">
               <FileText className="h-8 w-8 text-violet-600" />
             </div>
@@ -220,7 +220,7 @@ export default function Documents() {
             </DocumentFormDialog>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-xl bg-white">
+          <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-xl bg-card">
             <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
             <h3 className="text-[15px] font-bold">No matches</h3>
             <p className="text-[13px] text-muted-foreground mt-1">Try a different search term or category.</p>
@@ -237,7 +237,7 @@ export default function Documents() {
               return (
                 <Card
                   key={doc.id}
-                  className="bg-white border-border hover:border-primary/30 transition-all group cursor-pointer"
+                  className="bg-card border-border hover:border-primary/30 transition-all group cursor-pointer"
                   style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
                   onClick={() => setPreviewDocument(doc)}
                 >

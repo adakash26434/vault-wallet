@@ -75,11 +75,10 @@ function formatDue(dateStr: string, timeStr?: string | null) {
     diff === 1 ? "Tomorrow" :
     diff === -1 ? "Yesterday" :
     new Date(y, m - 1, d).toLocaleDateString("en-NP", { day: "numeric", month: "short" });
-  return timeLabel(dateLabel, timeStr, diff);
+  return timeLabel(dateLabel, timeStr);
 }
 
-function timeLabel(date: string, time?: string | null, diff?: number) {
-  const _ = diff;
+function timeLabel(date: string, time?: string | null) {
   if (time) return `${date} · ${time}`;
   return date;
 }
