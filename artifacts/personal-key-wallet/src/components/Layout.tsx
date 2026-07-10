@@ -4,7 +4,7 @@ import {
   LayoutDashboard, KeyRound, FileText, Wallet, BarChart3,
   Lightbulb, ShieldCheck, LogOut, ChevronRight, User,
   Bell, Search, Menu, BookOpen, Download, X, FileSpreadsheet, BellRing,
-  Moon, Sun,
+  Moon, Sun, MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -58,6 +58,14 @@ const navSections = [
       { href: "/extension", label: "Extension & App", icon: BookOpen },
     ],
   },
+];
+
+const BOTTOM_NAV = [
+  { href: "/",                label: "Home",      icon: LayoutDashboard },
+  { href: "/vault/passwords", label: "Passwords", icon: KeyRound },
+  { href: "/vault/documents", label: "Docs",      icon: FileText },
+  { href: "/finance",         label: "Finance",   icon: Wallet },
+  { href: "/tasks",           label: "Reminders", icon: BellRing },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
@@ -134,7 +142,6 @@ export default function Layout({ children }: LayoutProps) {
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : user?.email?.[0]?.toUpperCase() ?? "U";
 
-  // PWA install prompt
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
@@ -200,7 +207,6 @@ export default function Layout({ children }: LayoutProps) {
 
   const SidebarBottom = () => (
     <>
-      {/* Made in Nepal strip */}
       <div className="px-4 py-2.5 text-center" style={{ borderTop: "1px solid hsl(var(--border))" }}>
         <div className="flex items-center justify-center gap-1 text-[10.5px] text-muted-foreground/70 mb-0.5">
           <span>🇳🇵</span>
@@ -215,7 +221,6 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </div>
 
-      {/* User panel */}
       <div className="p-3" style={{ borderTop: "1px solid hsl(var(--border))" }}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -267,7 +272,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="flex flex-col min-h-[100dvh] w-full bg-background text-foreground font-sans">
 
-      {/* ── PWA Install Banner ── */}
+      {/* PWA Install Banner */}
       {showPwaBanner && !pwaInstalled && (
         <div
           className="flex items-center gap-3 px-4 py-2.5 text-white text-sm shrink-0 relative z-50"
@@ -301,7 +306,7 @@ export default function Layout({ children }: LayoutProps) {
     <div className="flex flex-1 overflow-hidden">
       <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
 
-      {/* ── Desktop Sidebar ── */}
+      {/* Desktop Sidebar */}
       <aside
         className="w-[220px] flex-shrink-0 flex-col hidden md:flex"
         style={{
@@ -310,7 +315,6 @@ export default function Layout({ children }: LayoutProps) {
           boxShadow: "2px 0 8px rgba(0,0,0,0.04)",
         }}
       >
-        {/* Logo */}
         <div className="h-[52px] flex items-center px-5 gap-2.5" style={{ borderBottom: "1px solid hsl(var(--border))" }}>
           <div className="h-7 w-7 rounded-md flex items-center justify-center" style={{ background: "hsl(var(--primary))" }}>
             <ShieldCheck className="h-4 w-4 text-white" />
@@ -322,7 +326,7 @@ export default function Layout({ children }: LayoutProps) {
         <SidebarBottom />
       </aside>
 
-      {/* ── Main area ── */}
+      {/* Main area */}
       <div className="flex-1 flex flex-col overflow-hidden">
 
         {/* Top bar */}
@@ -334,16 +338,15 @@ export default function Layout({ children }: LayoutProps) {
             boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
           }}
         >
-          {/* Mobile hamburger */}
+          {/* Mobile hamburger — opens full nav sheet for "More" items */}
           <div className="md:hidden">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Menu className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Menu className="h-4.5 w-4.5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[250px] p-0 flex flex-col">
-                {/* Mobile sidebar logo */}
+              <SheetContent side="left" className="w-[270px] p-0 flex flex-col">
                 <div className="h-[52px] flex items-center px-5 gap-2.5 shrink-0" style={{ borderBottom: "1px solid hsl(var(--border))" }}>
                   <div className="h-7 w-7 rounded-md flex items-center justify-center" style={{ background: "hsl(var(--primary))" }}>
                     <ShieldCheck className="h-4 w-4 text-white" />
@@ -356,16 +359,24 @@ export default function Layout({ children }: LayoutProps) {
             </Sheet>
           </div>
 
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-1.5 text-[13px]">
-            <span className="text-muted-foreground font-medium hidden sm:block">Key Wallet</span>
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 hidden sm:block" />
+          {/* Logo on mobile */}
+          <div className="md:hidden flex items-center gap-2">
+            <div className="h-6 w-6 rounded-md flex items-center justify-center" style={{ background: "hsl(var(--primary))" }}>
+              <ShieldCheck className="h-3.5 w-3.5 text-white" />
+            </div>
+            <span className="font-bold text-[14px] tracking-tight text-foreground">Key Wallet</span>
+          </div>
+
+          {/* Breadcrumb on desktop */}
+          <div className="hidden md:flex items-center gap-1.5 text-[13px]">
+            <span className="text-muted-foreground font-medium">Key Wallet</span>
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
             <span className="font-semibold text-foreground">{pageTitle}</span>
           </div>
 
           <div className="flex-1" />
 
-          {/* ⌘K search button */}
+          {/* Search button */}
           <button
             onClick={() => setCmdOpen(true)}
             className="hidden sm:flex items-center gap-2 h-8 px-3 rounded-lg border border-border bg-muted/40 hover:bg-muted transition-colors text-[12.5px] text-muted-foreground"
@@ -381,14 +392,14 @@ export default function Layout({ children }: LayoutProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="sm:hidden h-8 w-8 text-muted-foreground"
+            className="sm:hidden h-9 w-9 text-muted-foreground"
             onClick={() => setCmdOpen(true)}
           >
             <Search className="h-4 w-4" />
           </Button>
 
           {/* Bell */}
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted">
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted">
             <Bell className="h-4 w-4" />
           </Button>
 
@@ -406,20 +417,22 @@ export default function Layout({ children }: LayoutProps) {
           <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
 
           {/* Avatar */}
-          <div className="hidden sm:flex items-center gap-2">
-            <Avatar className="h-7 w-7">
-              {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name ?? "avatar"} className="object-cover" />}
-              <AvatarFallback
-                className="text-[11px] font-semibold"
-                style={{ background: "hsl(var(--primary) / 0.12)", color: "hsl(var(--primary))" }}
-              >
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-[13px] font-medium text-foreground hidden lg:block">
-              {user?.name ?? user?.email?.split("@")[0]}
-            </span>
-          </div>
+          <Link href="/profile">
+            <div className="flex items-center gap-2 cursor-pointer">
+              <Avatar className="h-8 w-8 ring-2 ring-transparent hover:ring-primary/30 transition-all">
+                {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name ?? "avatar"} className="object-cover" />}
+                <AvatarFallback
+                  className="text-[11px] font-semibold"
+                  style={{ background: "hsl(var(--primary) / 0.12)", color: "hsl(var(--primary))" }}
+                >
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-[13px] font-medium text-foreground hidden lg:block">
+                {user?.name ?? user?.email?.split("@")[0]}
+              </span>
+            </div>
+          </Link>
         </header>
 
         {/* Page content */}
@@ -430,13 +443,83 @@ export default function Layout({ children }: LayoutProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="p-4 md:p-6 lg:p-8 max-w-[1280px] mx-auto"
+            className="p-4 md:p-6 lg:p-8 max-w-[1280px] mx-auto pb-24 md:pb-8"
           >
             {children}
           </motion.div>
         </main>
       </div>
     </div>
+
+    {/* ── Mobile Bottom Navigation Bar ── */}
+    <nav
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-stretch"
+      style={{
+        background: "white",
+        borderTop: "1px solid hsl(var(--border))",
+        boxShadow: "0 -2px 12px rgba(0,0,0,0.08)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
+    >
+      {BOTTOM_NAV.map(({ href, label, icon: Icon }) => {
+        const isActive = location === href;
+        return (
+          <Link
+            key={href}
+            href={href}
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[56px] transition-colors relative"
+          >
+            <div
+              className={cn(
+                "flex items-center justify-center h-7 w-7 rounded-xl transition-all duration-150",
+                isActive ? "scale-105" : ""
+              )}
+              style={isActive ? { background: "hsl(var(--primary) / 0.12)" } : {}}
+            >
+              <Icon
+                className="h-[19px] w-[19px] transition-colors duration-150"
+                style={{ color: isActive ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}
+              />
+            </div>
+            <span
+              className="text-[10px] font-semibold transition-colors duration-150 leading-none"
+              style={{ color: isActive ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}
+            >
+              {label}
+            </span>
+            {isActive && (
+              <span
+                className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-b-full"
+                style={{ background: "hsl(var(--primary))" }}
+              />
+            )}
+          </Link>
+        );
+      })}
+
+      {/* More button → opens sidebar sheet */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetTrigger asChild>
+          <button className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[56px]">
+            <div className="flex items-center justify-center h-7 w-7 rounded-xl">
+              <MoreHorizontal className="h-[19px] w-[19px] text-muted-foreground" />
+            </div>
+            <span className="text-[10px] font-semibold text-muted-foreground leading-none">More</span>
+          </button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-[270px] p-0 flex flex-col">
+          <div className="h-[52px] flex items-center px-5 gap-2.5 shrink-0" style={{ borderBottom: "1px solid hsl(var(--border))" }}>
+            <div className="h-7 w-7 rounded-md flex items-center justify-center" style={{ background: "hsl(var(--primary))" }}>
+              <ShieldCheck className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-bold text-[15px] tracking-tight text-foreground">Key Wallet</span>
+          </div>
+          <NavList location={location} onClick={() => setMobileOpen(false)} />
+          <SidebarBottom />
+        </SheetContent>
+      </Sheet>
+    </nav>
+
     </div>
   );
 }

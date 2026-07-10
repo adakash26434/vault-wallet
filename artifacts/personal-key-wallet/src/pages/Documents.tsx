@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import {
   FileText, Plus, MoreVertical, Trash2, Edit, ExternalLink,
   CalendarClock, Eye, ShieldCheck, CreditCard, Heart, Car,
-  Home, Landmark, Search, Filter,
+  Home, Landmark, Search, Filter, CalendarDays, Hash, Building2,
+  AlertTriangle, CheckCircle2,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -29,41 +30,56 @@ import { Document } from "@workspace/api-client-react";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-const CATEGORY_ICONS: Record<string, React.ElementType> = {
-  Identity:   ShieldCheck,
-  Financial:  CreditCard,
-  Medical:    Heart,
-  Vehicle:    Car,
-  Property:   Home,
-  Government: Landmark,
-  Other:      FileText,
-};
-
-const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
-  Identity:   { bg: "bg-blue-100",   text: "text-blue-700" },
-  Financial:  { bg: "bg-emerald-100", text: "text-emerald-700" },
-  Medical:    { bg: "bg-rose-100",   text: "text-rose-700" },
-  Vehicle:    { bg: "bg-orange-100", text: "text-orange-700" },
-  Property:   { bg: "bg-violet-100", text: "text-violet-700" },
-  Government: { bg: "bg-amber-100",  text: "text-amber-700" },
-  Other:      { bg: "bg-slate-100",  text: "text-slate-600" },
+const CATEGORY_META: Record<string, {
+  Icon: React.ElementType;
+  bg: string;
+  text: string;
+  border: string;
+  headerBg: string;
+  emoji: string;
+}> = {
+  Identity:   { Icon: ShieldCheck, bg: "bg-blue-50",    text: "text-blue-700",    border: "border-blue-200",   headerBg: "bg-gradient-to-r from-blue-500 to-blue-600",   emoji: "🪪" },
+  Financial:  { Icon: CreditCard,  bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200",headerBg: "bg-gradient-to-r from-emerald-500 to-emerald-600", emoji: "💳" },
+  Medical:    { Icon: Heart,       bg: "bg-rose-50",    text: "text-rose-700",    border: "border-rose-200",   headerBg: "bg-gradient-to-r from-rose-500 to-rose-600",   emoji: "🏥" },
+  Vehicle:    { Icon: Car,         bg: "bg-orange-50",  text: "text-orange-700",  border: "border-orange-200", headerBg: "bg-gradient-to-r from-orange-400 to-orange-500", emoji: "🚗" },
+  Property:   { Icon: Home,        bg: "bg-violet-50",  text: "text-violet-700",  border: "border-violet-200", headerBg: "bg-gradient-to-r from-violet-500 to-violet-600", emoji: "🏠" },
+  Government: { Icon: Landmark,    bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-200",  headerBg: "bg-gradient-to-r from-amber-500 to-amber-600", emoji: "🏛️" },
+  Other:      { Icon: FileText,    bg: "bg-slate-50",   text: "text-slate-600",   border: "border-slate-200",  headerBg: "bg-gradient-to-r from-slate-400 to-slate-500", emoji: "📄" },
 };
 
 const ALL_CATEGORIES = ["All", "Identity", "Financial", "Medical", "Vehicle", "Property", "Government", "Other"];
 
+function ExpiryStatus({ doc }: { doc: Document }) {
+  if (!doc.expiryDate) return null;
+  if (doc.isExpired)
+    return (
+      <div className="flex items-center gap-1 text-red-600">
+        <AlertTriangle className="h-3.5 w-3.5" />
+        <span className="text-[11.5px] font-semibold">Expired</span>
+      </div>
+    );
+  if (doc.daysUntilExpiry != null && doc.daysUntilExpiry <= 30)
+    return (
+      <div className="flex items-center gap-1 text-amber-600">
+        <AlertTriangle className="h-3.5 w-3.5" />
+        <span className="text-[11.5px] font-semibold">Expires in {doc.daysUntilExpiry}d</span>
+      </div>
+    );
+  return (
+    <div className="flex items-center gap-1 text-emerald-600">
+      <CheckCircle2 className="h-3.5 w-3.5" />
+      <span className="text-[11.5px] font-semibold">Valid</span>
+    </div>
+  );
+}
+
 function ExpiryBadge({ doc }: { doc: Document }) {
   if (!doc.expiryDate) return null;
   if (doc.isExpired)
-    return <Badge className="bg-red-100 text-red-700 border-red-200 hover:bg-red-100">Expired</Badge>;
+    return <Badge className="bg-red-100 text-red-700 border-red-200 hover:bg-red-100 text-[10.5px]">Expired</Badge>;
   if (doc.daysUntilExpiry != null && doc.daysUntilExpiry <= 30)
-    return (
-      <Badge className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100">
-        Expires in {doc.daysUntilExpiry}d
-      </Badge>
-    );
-  return (
-    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">Valid</Badge>
-  );
+    return <Badge className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100 text-[10.5px]">Expires {doc.daysUntilExpiry}d</Badge>;
+  return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100 text-[10.5px]">Valid</Badge>;
 }
 
 export default function Documents() {
@@ -82,7 +98,6 @@ export default function Documents() {
   );
   const deleteMutation = useDeleteDocument();
 
-  // Client-side search + category filter
   const filtered = React.useMemo(() => {
     if (!documents) return [];
     let result = documents;
@@ -99,7 +114,6 @@ export default function Documents() {
     return result;
   }, [documents, selectedCategory, search]);
 
-  // Category counts
   const categoryCounts = React.useMemo(() => {
     if (!documents) return {} as Record<string, number>;
     return documents.reduce<Record<string, number>>((acc, d) => {
@@ -109,6 +123,7 @@ export default function Documents() {
   }, [documents]);
 
   const expiringSoon = documents?.filter((d) => !d.isExpired && d.daysUntilExpiry != null && d.daysUntilExpiry <= 30).length ?? 0;
+  const expired = documents?.filter((d) => d.isExpired).length ?? 0;
 
   const handleDeleteConfirm = () => {
     if (deletingId == null) return;
@@ -138,22 +153,26 @@ export default function Documents() {
             Store and access your important Nepali documents — encrypted and safe.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {expired > 0 && (
+            <Badge className="bg-red-100 text-red-700 border-red-200 gap-1">
+              <AlertTriangle className="h-3 w-3" /> {expired} expired
+            </Badge>
+          )}
           {expiringSoon > 0 && (
-            <Badge className="bg-amber-100 text-amber-700 border-amber-200">
-              {expiringSoon} expiring soon
+            <Badge className="bg-amber-100 text-amber-700 border-amber-200 gap-1">
+              <CalendarClock className="h-3 w-3" /> {expiringSoon} expiring soon
             </Badge>
           )}
           <DocumentFormDialog>
-            <Button style={{ background: "hsl(var(--primary))" }}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Document
+            <Button style={{ background: "hsl(var(--primary))" }} className="h-10 gap-2">
+              <Plus className="h-4 w-4" /> Add Document
             </Button>
           </DocumentFormDialog>
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search + filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -165,13 +184,13 @@ export default function Documents() {
           />
         </div>
 
-        {/* Category filter */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
           <Filter className="h-3.5 w-3.5 text-muted-foreground shrink-0 ml-1" />
           {ALL_CATEGORIES.map((cat) => {
             const count = cat === "All" ? (documents?.length ?? 0) : (categoryCounts[cat] ?? 0);
             if (cat !== "All" && count === 0) return null;
             const isActive = selectedCategory === cat;
+            const meta = cat !== "All" ? CATEGORY_META[cat] : null;
             return (
               <button
                 key={cat}
@@ -183,6 +202,7 @@ export default function Documents() {
                     : "bg-white text-muted-foreground border-border hover:border-primary/30 hover:text-foreground"
                 )}
               >
+                {meta && <span className="text-[12px]">{meta.emoji}</span>}
                 {cat}
                 {count > 0 && (
                   <span className={cn(
@@ -201,13 +221,13 @@ export default function Documents() {
       {/* Document grid */}
       <div>
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-36 w-full rounded-xl" />
+              <Skeleton key={i} className="h-52 w-full rounded-2xl" />
             ))}
           </div>
         ) : filtered.length === 0 && documents?.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-border rounded-xl bg-card">
+          <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-border rounded-2xl bg-card">
             <div className="h-16 w-16 rounded-2xl bg-violet-100 flex items-center justify-center mb-4">
               <FileText className="h-8 w-8 text-violet-600" />
             </div>
@@ -220,7 +240,7 @@ export default function Documents() {
             </DocumentFormDialog>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-xl bg-card">
+          <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-2xl bg-card">
             <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
             <h3 className="text-[15px] font-bold">No matches</h3>
             <p className="text-[13px] text-muted-foreground mt-1">Try a different search term or category.</p>
@@ -230,42 +250,42 @@ export default function Documents() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {filtered.map((doc) => {
-              const CategoryIcon = CATEGORY_ICONS[doc.category] ?? FileText;
-              const style = CATEGORY_STYLES[doc.category] ?? CATEGORY_STYLES.Other;
+              const meta = CATEGORY_META[doc.category] ?? CATEGORY_META.Other;
+              const { Icon: CategoryIcon } = meta;
+              const isUrgent = doc.isExpired || (doc.daysUntilExpiry != null && doc.daysUntilExpiry <= 30);
+
               return (
-                <Card
+                <div
                   key={doc.id}
-                  className="bg-card border-border hover:border-primary/30 transition-all group cursor-pointer"
-                  style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
+                  className={cn(
+                    "group bg-card rounded-2xl border overflow-hidden cursor-pointer transition-all duration-150 hover:-translate-y-0.5",
+                    isUrgent ? "border-amber-200 hover:border-amber-300" : "border-border hover:border-primary/30",
+                    "hover:shadow-md"
+                  )}
+                  style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}
                   onClick={() => setPreviewDocument(doc)}
                 >
-                  <CardContent className="p-5 flex flex-col justify-between h-full gap-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3.5">
-                        <div className={`h-11 w-11 rounded-xl flex shrink-0 items-center justify-center ${style.bg}`}>
-                          <CategoryIcon className={`h-5 w-5 ${style.text}`} />
+                  {/* Colored header strip */}
+                  <div className={cn("h-2 w-full", isUrgent && doc.isExpired ? "bg-red-500" : isUrgent ? "bg-amber-400" : meta.headerBg)} />
+
+                  <div className="p-4">
+                    {/* Top row: icon + name + menu */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-start gap-3">
+                        <div className={cn("h-11 w-11 rounded-xl flex shrink-0 items-center justify-center text-xl", meta.bg)}>
+                          {meta.emoji}
                         </div>
                         <div className="min-w-0">
-                          <h4 className="font-bold text-[14px] text-foreground truncate">{doc.name}</h4>
-                          <p className={`text-[12px] font-semibold ${style.text}`}>{doc.category}</p>
-                          {doc.documentNumber && (
-                            <p className="text-[11px] text-muted-foreground font-mono truncate mt-0.5">
-                              #{doc.documentNumber}
-                            </p>
-                          )}
-                          {doc.issuedBy && (
-                            <p className="text-[11px] text-muted-foreground truncate">
-                              Issued by: {doc.issuedBy}
-                            </p>
-                          )}
+                          <h4 className="font-bold text-[14px] text-foreground leading-snug">{doc.name}</h4>
+                          <span className={cn("text-[11px] font-semibold", meta.text)}>{doc.category}</span>
                         </div>
                       </div>
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="-mr-1.5 -mt-1.5 h-8 w-8">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1 -mr-1 shrink-0">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -291,36 +311,54 @@ export default function Documents() {
                       </DropdownMenu>
                     </div>
 
-                    <div className="flex items-center justify-between pt-3 border-t border-border/60">
-                      <div className="flex items-center text-[12px] text-muted-foreground">
-                        {doc.expiryDate ? (
-                          <>
-                            <CalendarClock className="h-3.5 w-3.5 mr-1.5" />
-                            Expires {formatDate(doc.expiryDate)}
-                          </>
-                        ) : (
-                          <span className="text-[12px] text-muted-foreground/60">No expiry date</span>
-                        )}
-                      </div>
+                    {/* Details rows */}
+                    <div className="space-y-1.5">
+                      {doc.documentNumber && (
+                        <div className="flex items-center gap-2 text-[12px]">
+                          <Hash className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                          <span className="font-mono text-muted-foreground truncate">{doc.documentNumber}</span>
+                        </div>
+                      )}
+                      {doc.issuedBy && (
+                        <div className="flex items-center gap-2 text-[12px]">
+                          <Building2 className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                          <span className="text-muted-foreground truncate">{doc.issuedBy}</span>
+                        </div>
+                      )}
+                      {doc.issueDate && (
+                        <div className="flex items-center gap-2 text-[12px]">
+                          <CalendarDays className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                          <span className="text-muted-foreground">Issued {formatDate(doc.issueDate)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer: expiry status + badge */}
+                    <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between">
+                      {doc.expiryDate ? (
+                        <div className="flex items-center gap-1.5">
+                          <CalendarClock className={cn("h-3.5 w-3.5", doc.isExpired ? "text-red-500" : doc.daysUntilExpiry != null && doc.daysUntilExpiry <= 30 ? "text-amber-500" : "text-muted-foreground/60")} />
+                          <span className="text-[12px] text-muted-foreground">Expires {formatDate(doc.expiryDate)}</span>
+                        </div>
+                      ) : (
+                        <span className="text-[12px] text-muted-foreground/50">No expiry</span>
+                      )}
                       <div className="flex items-center gap-2">
                         <ExpiryBadge doc={doc} />
-                        <span className="text-[11px] text-muted-foreground/60 group-hover:text-primary transition-colors flex items-center gap-1">
-                          <Eye className="h-3 w-3" /> View
-                        </span>
+                        <Eye className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-primary/50 transition-colors" />
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               );
             })}
           </div>
         )}
       </div>
 
-      {/* Results count */}
       {filtered.length > 0 && (documents?.length ?? 0) > 0 && (
         <p className="text-center text-[12px] text-muted-foreground pb-2">
-          Showing {filtered.length} of {documents?.length} documents
+          {filtered.length} of {documents?.length} document{documents?.length !== 1 ? "s" : ""}
           {selectedCategory !== "All" ? ` in "${selectedCategory}"` : ""}
         </p>
       )}

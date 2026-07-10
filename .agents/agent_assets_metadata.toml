@@ -12,3 +12,9 @@ id = "EBAGQD2c-xASFWeUd_91P"
 uri = "file://personal-key-wallet-final.zip"
 type = "unspecified"
 title = "Personal Key Wallet — Final Source (with all new features)"
+
+[[outputs]]
+id = "pwvDQz8BGRO9xop4NSDYz"
+uri = "file://personal-key-wallet-v2.zip"
+type = "unspecified"
+title = "Personal Key Wallet v2 — All Improvements"
