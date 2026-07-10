@@ -43,7 +43,10 @@ export function decrypt(stored: string): string {
   if (!stored.startsWith(PREFIX)) return stored;
 
   const parts = stored.slice(PREFIX.length).split(":");
-  if (parts.length !== 3) return stored;
+  if (parts.length !== 3) {
+    console.warn("[crypto] WARNING: Malformed encrypted value received. Returning as-is. Key rotation or data corruption may be the cause.");
+    return stored;
+  }
 
   const [ivHex, authTagHex, ctHex] = parts;
   const key = getKey();
@@ -53,7 +56,12 @@ export function decrypt(stored: string): string {
 
   const decipher = createDecipheriv(ALG, key, iv);
   decipher.setAuthTag(authTag);
-  return Buffer.concat([decipher.update(ct), decipher.final()]).toString("utf8");
+  try {
+    return Buffer.concat([decipher.update(ct), decipher.final()]).toString("utf8");
+  } catch (err) {
+    console.error("[crypto] ERROR: Decryption failed. This may indicate a wrong ENCRYPTION_KEY or corrupted data:", err instanceof Error ? err.message : err);
+    return stored;
+  }
 }
 
 /** Encrypt a nullable string field. null/undefined passes through. */

@@ -17,7 +17,17 @@ import { randomUUID } from "node:crypto";
 
 const router = Router();
 
-const JWT_SECRET = process.env.SESSION_SECRET || "dev-secret-change-in-prod";
+const JWT_SECRET = (() => {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("SESSION_SECRET environment variable is required in production");
+    }
+    console.warn("[auth] WARNING: SESSION_SECRET not set. Using dev fallback. Set a real secret for production!");
+    return "dev-secret-change-in-prod";
+  }
+  return secret;
+})();
 const TEMP_TOKEN_EXPIRY = "10m";
 const SESSION_EXPIRY = "7d";
 const APP_NAME = "PersonalKeyWallet";

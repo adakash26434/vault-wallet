@@ -15,13 +15,35 @@ const router = Router();
 
 function computeStrength(password: string): "weak" | "medium" | "strong" {
   if (password.length < 8) return "weak";
+
+  // Check for common weak passwords
+  const lower = password.toLowerCase();
+  const commonPasswords = ['password', '123456', 'qwerty', 'admin', 'letmein', 'welcome', 'monkey', 'dragon'];
+  if (commonPasswords.some(p => lower.includes(p))) return "weak";
+
+  // Check for sequential characters (e.g., abc, 123, qwert)
+  if (/(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|012|123|234|345|456|567|678|789)/i.test(password)) {
+    return "weak";
+  }
+
+  // Check for repeated characters (e.g., aaa, 111)
+  if (/(.)\1{2,}/.test(password)) return "weak";
+
+  // Check for keyboard patterns
+  if (/qwertyuiop|asdfghjkl|zxcvbnm/i.test(password)) return "weak";
+
   const hasUpper = /[A-Z]/.test(password);
   const hasLower = /[a-z]/.test(password);
   const hasNumber = /[0-9]/.test(password);
   const hasSpecial = /[^A-Za-z0-9]/.test(password);
   const score = [hasUpper, hasLower, hasNumber, hasSpecial].filter(Boolean).length;
-  if (score >= 3 && password.length >= 12) return "strong";
-  if (score >= 2) return "medium";
+
+  // Length bonus
+  const lengthBonus = password.length >= 14 ? 2 : password.length >= 10 ? 1 : 0;
+  const finalScore = score + lengthBonus;
+
+  if (finalScore >= 4 && password.length >= 10) return "strong";
+  if (finalScore >= 3) return "medium";
   return "weak";
 }
 
@@ -118,11 +140,19 @@ router.get("/passwords/match", async (req, res) => {
     .split("/")[0]
     .toLowerCase();
 
-  const rows = await db.select().from(passwordsTable);
+  // First try exact title match on the non-encrypted title field (fast path)
+  // This avoids decrypting all rows when there's a title match
+  const baseMatch = cleanDomain.split(".")[0];
+  let rows = await db
+    .select()
+    .from(passwordsTable)
+    .where(ilike(passwordsTable.title, `%${baseMatch}%`));
+
   const decrypted = rows.map(decryptRow);
 
+  // Filter decrypted results for actual domain match
   const matched = decrypted.filter((r) => {
-    if (!r.url) return r.title.toLowerCase().includes(cleanDomain.split(".")[0]);
+    if (!r.url) return r.title.toLowerCase().includes(baseMatch);
     const rowDomain = r.url
       .replace(/^https?:\/\//, "")
       .replace(/^www\./, "")
